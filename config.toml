@@ -9,3 +9,9 @@ ignoreFiles = [ "themes/" ]
   author = "uzzzzz"
   description = "个人博客"
   share = false
+  authorwebsite = "https://blog.uzzzzz.xyz/"
+  # Optional RSS-Link, if not provided it defaults to the standard index.xml
+  RSSLink = ""
+  githubName = "UUZZzga"
+  twitterName = ""
+  hideHUGOSupport = false
