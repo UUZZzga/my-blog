@@ -2,27 +2,27 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Bullet on My Blog</title>
-    <link>https://uuzzzga.github.io/my-blog/tags/bullet/</link>
+    <link>https://blog.uzzzzz.xyz/tags/bullet/</link>
     <description>Recent content in Bullet on My Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 25 Mar 2021 16:49:26 +0800</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/tags/bullet/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 25 Mar 2021 16:49:26 +0800</lastBuildDate><atom:link href="https://blog.uzzzzz.xyz/tags/bullet/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>HelloBullet 02</title>
-      <link>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-02/</link>
+      <link>https://blog.uzzzzz.xyz/post/21/03/hellobullet-02/</link>
       <pubDate>Thu, 25 Mar 2021 16:49:26 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-02/</guid>
+      <guid>https://blog.uzzzzz.xyz/post/21/03/hellobullet-02/</guid>
       <description>物理计算 类的关系   抽象类 CommonExampleInterface   初始化 和 结束 virtual void initPhysics() = 0; virtual void exitPhysics() = 0;   计算物理 virtual void stepSimulation(float deltaTime) = 0;   图像GUI相关 virtual void updateGraphics() {} virtual void renderScene() = 0;   窗口回执
 virtual bool mouseMoveCallback(float x, float y) = 0; virtual bool mouseButtonCallback(int button, int state, float x, float y) = 0; virtual bool keyboardCallback(int key, int state) = 0;   debug相关 virtual void physicsDebugDraw(int debugFlags) = 0; //目前，我们在 Bullet/src/LinearMath/btIDebugDraw.</description>
     </item>
     
     <item>
       <title>HelloBullet 01</title>
-      <link>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-01/</link>
+      <link>https://blog.uzzzzz.xyz/post/21/03/hellobullet-01/</link>
       <pubDate>Tue, 23 Mar 2021 22:59:48 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-01/</guid>
+      <guid>https://blog.uzzzzz.xyz/post/21/03/hellobullet-01/</guid>
       <description>初始化   碰撞配置 //默认 碰撞配置 btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration(); //使用默认 碰撞调度器 btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration); 碰撞调度器所在 src/CollisionDispatch
   Broad-Phase //通用的Broad-Phase btBroadphaseInterface* overlappingPairCache = new btDbvtBroadphase(); https://zhuanlan.zhihu.com/p/113415779 如果把所有物体 两两计算碰撞 计算量 O(N^2) Broad-Phase 就是把明显不相关的 计算排除掉
   约束求解器 //默认约束求解器 btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver; 约束求解器 src/BulletDynamics/ConstraintSolver

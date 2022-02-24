@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>test on My Blog</title>
-    <link>https://uuzzzga.github.io/my-blog/tags/test/</link>
+    <link>https://blog.uzzzzz.xyz/tags/test/</link>
     <description>Recent content in test on My Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 23 Mar 2021 09:19:06 +0800</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/tags/test/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 23 Mar 2021 09:19:06 +0800</lastBuildDate><atom:link href="https://blog.uzzzzz.xyz/tags/test/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>HelloHugo</title>
-      <link>https://uuzzzga.github.io/my-blog/post/21/03/hellohugo/</link>
+      <link>https://blog.uzzzzz.xyz/post/21/03/hellohugo/</link>
       <pubDate>Tue, 23 Mar 2021 09:19:06 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/21/03/hellohugo/</guid>
+      <guid>https://blog.uzzzzz.xyz/post/21/03/hellohugo/</guid>
       <description>测试 test  无序列表  1   a   A  有序列表  1.a 2.b 3.c 9.d 注意  区块引用  区块引用测试
  再次嵌套
  再次再次嵌套

@@ -2,27 +2,27 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>bgfx on My Blog</title>
-    <link>https://uuzzzga.github.io/my-blog/tags/bgfx/</link>
+    <link>https://blog.uzzzzz.xyz/tags/bgfx/</link>
     <description>Recent content in bgfx on My Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 30 Mar 2021 16:36:40 +0800</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/tags/bgfx/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 30 Mar 2021 16:36:40 +0800</lastBuildDate><atom:link href="https://blog.uzzzzz.xyz/tags/bgfx/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Bgfx 02</title>
-      <link>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-02/</link>
+      <link>https://blog.uzzzzz.xyz/post/21/03/bgfx-02/</link>
       <pubDate>Tue, 30 Mar 2021 16:36:40 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-02/</guid>
+      <guid>https://blog.uzzzzz.xyz/post/21/03/bgfx-02/</guid>
       <description>PosColorVertex 类 ms_layout 静态属性 static bgfx::VertexLayout ms_layout; init 静态方法 ms_layout .begin() .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float) .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true) .end(); 初始化 ms_layout ms_layout 类型储存着 其他属性 的 类型顺序
 其他属性 float m_x; float m_y; float m_z; uint32_t m_abgr; ExampleCubes 类 init 方法 // Create static vertex buffer. m_vbh = bgfx::createVertexBuffer( // Static data can be passed with bgfx::makeRef 	bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices) ) , PosColorVertex::ms_layout ); bgfx::makeRef 构造一个 指针 构造一个 vbh 数据 s_cubeVertices 长度 s_cubeVertices的长度 ，数组结构顺序 PosColorVertex::ms_layout vbh 对应着opengl 的vbo</description>
     </item>
     
     <item>
       <title>Bgfx 01</title>
-      <link>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-01/</link>
+      <link>https://blog.uzzzzz.xyz/post/21/03/bgfx-01/</link>
       <pubDate>Tue, 30 Mar 2021 09:45:15 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-01/</guid>
+      <guid>https://blog.uzzzzz.xyz/post/21/03/bgfx-01/</guid>
       <description>ExampleHelloWorld 类 init 方法 bgfx::Init init; init.type = args.m_type; init.vendorId = args.m_pciId; init.resolution.width = m_width; init.resolution.height = m_height; init.resolution.reset = m_reset; bgfx::init(init); 对bgfx 进行初始化 可以指定渲染引擎 init.type = bgfx::RendererType::Vulkan;
 m_debug = BGFX_DEBUG_TEXT; ... bgfx::setDebug(m_debug); 设置debug信息 其他可选项有
  BGFX_DEBUG_IFH 跳过所有呈现调用。这在分析CPU和GPU之间的潜在瓶颈时非常有用。 BGFX_DEBUG_PROFILER 启用探查器(profiler)。 BGFX_DEBUG_STATS 显示内部统计信息。 BGFX_DEBUG_TEXT 显示调试文本。 BGFX_DEBUG_WIREFRAME 线框渲染。所有渲染原语都将渲染为线。  // Set view 0 clear state. bgfx::setViewClear(0 , BGFX_CLEAR_COLOR|BGFX_CLEAR_DEPTH , 0x303030ff , 1.0f , 0 ); [in] _id: View id. [in] flags: 清除标志。使用 BGFX_CLEAR_NONE 移除任何清除操作。请参见： BGFX_CLEAR*.</description>
