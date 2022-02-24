@@ -96,16 +96,238 @@
 	   
 <article class="post post">
     <header class="post-header">
-        <h2 class="post-title"><a href="/my-blog/post/test/">sample</a></h2>
+        <h2 class="post-title"><a href="/my-blog/post/21/09/lua-parser-negative/">lua parser 负数小bug</a></h2>
     </header>
     <section class="post-excerpt">
       <p>
           <section class="post-content">
-            <p><a href="https://gohugo.io/documentation/">Hugo</a> is the world&rsquo;s fastest static website engine. It&rsquo;s written in Go (aka Golang) and developed by bep, <code>spf13</code> and friends.</p>
-<blockquote>
-<p>Below you will find some of the most common and helpful pages from our documentation.</p>
-</blockquote>
-<p><a href="https://gohugo.io/documentation/">https://gohugo.io/documentation/</a></p>
+            <p>bug代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> a<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775808</span>
+<span style="color:#66d9ef">local</span> b<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775807</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+
+print(a<span style="color:#f92672">==</span>b) <span style="color:#75715e">-- true</span>
+print(a) <span style="color:#75715e">-- -9.2233720368548e+18</span>
+print(b) <span style="color:#75715e">-- -9223372036854775808</span>
+</code></pre></div><p>查找官方社区
+<a href="http://lua-users.org/lists/lua-l/2020-03/msg00112.html">http://lua-users.org/lists/lua-l/2020-03/msg00112.html</a>
+<a href="http://lua-users.org/lists/lua-l/2020-03/msg00114.html">http://lua-users.org/lists/lua-l/2020-03/msg00114.html</a></p>
+<p>经阅读代码发现有写解析代码（详见 llex.c read_numeral）
+观察调用堆栈
+lparser.c subexpr</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">static</span> BinOpr <span style="color:#a6e22e">subexpr</span> (LexState <span style="color:#f92672">*</span>ls, expdesc <span style="color:#f92672">*</span>v, <span style="color:#66d9ef">int</span> limit) {
+  BinOpr op;
+  UnOpr uop;
+  enterlevel(ls);
+  uop <span style="color:#f92672">=</span> getunopr(ls<span style="color:#f92672">-&gt;</span>t.token);
+  <span style="color:#66d9ef">if</span> (uop <span style="color:#f92672">!=</span> OPR_NOUNOPR) {  <span style="color:#75715e">/* prefix (unary) operator? */</span>
+    <span style="color:#66d9ef">int</span> line <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>linenumber;
+    luaX_next(ls);  <span style="color:#75715e">/* skip operator */</span>
+    subexpr(ls, v, UNARY_PRIORITY);
+    luaK_prefix(ls<span style="color:#f92672">-&gt;</span>fs, uop, v, line);
+  }
+  <span style="color:#66d9ef">else</span> simpleexp(ls, v);
+  <span style="color:#75715e">// ...
+</span></code></pre></div><p>luaX_next 执行 llex 进行处理字符串转 整数和小数
+luaK_prefix 内处理过常量计算优化</p>
+<p>简单写了个修复
+lex.h</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> LexState {
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">int</span> prefixMinus;  <span style="color:#75715e">/* prefix equal minus */</span>
+} LexState;
+<span style="color:#75715e">// ...
+</span></code></pre></div><p>lparser.c</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> BinOpr <span style="color:#a6e22e">subexpr</span> (LexState <span style="color:#f92672">*</span>ls, expdesc <span style="color:#f92672">*</span>v, <span style="color:#66d9ef">int</span> limit) {
+  BinOpr op;
+  UnOpr uop;
+  enterlevel(ls);
+  uop <span style="color:#f92672">=</span> getunopr(ls<span style="color:#f92672">-&gt;</span>t.token);
+  <span style="color:#66d9ef">if</span>(uop <span style="color:#f92672">==</span> OPR_MINUS){ <span style="color:#75715e">/* 一元运算符 符号为 - */</span>
+    <span style="color:#75715e">// 修改部分
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> line <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>linenumber;
+    ls<span style="color:#f92672">-&gt;</span>prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">// 为负数
+</span><span style="color:#75715e"></span>    luaX_next(ls);
+    isPrefix <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>prefixMinus;<span style="color:#75715e">//a=-(-1)
+</span><span style="color:#75715e"></span>							   <span style="color:#75715e">//   ^
+</span><span style="color:#75715e"></span>    subexpr(ls, v, UNARY_PRIORITY);
+	<span style="color:#75715e">// 不执行 luaK_prefix(ls-&gt;fs, uop, v, line);
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 不能使用 a=-(-1)
+</span><span style="color:#75715e"></span>	
+	<span style="color:#66d9ef">if</span>(isPrefix){
+      luaK_prefix(ls<span style="color:#f92672">-&gt;</span>fs, uop, v, line);
+      ls<span style="color:#f92672">-&gt;</span>prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    }
+  }
+  <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (uop <span style="color:#f92672">!=</span> OPR_NOUNOPR) {  <span style="color:#75715e">/* prefix (unary) operator? */</span>
+    <span style="color:#66d9ef">int</span> line <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>linenumber;
+    luaX_next(ls);  <span style="color:#75715e">/* skip operator */</span>
+    subexpr(ls, v, UNARY_PRIORITY);
+    luaK_prefix(ls<span style="color:#f92672">-&gt;</span>fs, uop, v, line);
+  }
+  <span style="color:#66d9ef">else</span> simpleexp(ls, v);
+  <span style="color:#75715e">// ...
+</span></code></pre></div><p>lex.c</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">llex</span> (LexState <span style="color:#f92672">*</span>ls, SemInfo <span style="color:#f92672">*</span>seminfo) {
+      <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;0&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;1&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;2&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;3&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;4&#39;</span><span style="color:#f92672">:</span>
+      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;5&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;6&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;7&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;8&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;9&#39;</span><span style="color:#f92672">:</span> {
+	    <span style="color:#75715e">// 修改部分
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(ls<span style="color:#f92672">-&gt;</span>prefixMinus){
+          save(ls, <span style="color:#e6db74">&#39;-&#39;</span>);<span style="color:#75715e">// 向buffer写入 &#39;-&#39;
+</span><span style="color:#75715e"></span>		  ls<span style="color:#f92672">-&gt;</span>prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        }
+        <span style="color:#66d9ef">return</span> read_numeral(ls, seminfo);<span style="color:#75715e">//能处理 负数情况
+</span><span style="color:#75715e"></span>      }
+	  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>lparser.c</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">LClosure <span style="color:#f92672">*</span><span style="color:#a6e22e">luaY_parser</span> (lua_State <span style="color:#f92672">*</span>L, ZIO <span style="color:#f92672">*</span>z, Mbuffer <span style="color:#f92672">*</span>buff,
+                       Dyndata <span style="color:#f92672">*</span>dyd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>name, <span style="color:#66d9ef">int</span> firstchar) {
+  LexState lexstate;
+  FuncState funcstate;
+  LClosure <span style="color:#f92672">*</span>cl <span style="color:#f92672">=</span> luaF_newLclosure(L, <span style="color:#ae81ff">1</span>);  <span style="color:#75715e">/* create main closure */</span>
+  setclLvalue2s(L, L<span style="color:#f92672">-&gt;</span>top, cl);  <span style="color:#75715e">/* anchor it (to avoid being collected) */</span>
+  luaD_inctop(L);
+  lexstate.prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;<span style="color:#75715e">//初始化
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>编译测试</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> a<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775808</span>
+<span style="color:#66d9ef">local</span> b<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775807</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+<span style="color:#75715e">-- 试一下修改会不会影响小数</span>
+<span style="color:#66d9ef">local</span> c<span style="color:#f92672">=-</span><span style="color:#ae81ff">1.2345678</span>
+c<span style="color:#f92672">=</span>c<span style="color:#f92672">-</span><span style="color:#ae81ff">99</span>
+
+<span style="color:#66d9ef">local</span> d<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span><span style="color:#f92672">-</span>a
+<span style="color:#66d9ef">local</span> e<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span> <span style="color:#f92672">+</span> a
+
+print(a<span style="color:#f92672">==</span>b) <span style="color:#75715e">-- true</span>
+print(a) <span style="color:#75715e">-- -9223372036854775808</span>
+print(b) <span style="color:#75715e">-- -9223372036854775808</span>
+print(c) <span style="color:#75715e">-- -100.2345678</span>
+print(d) <span style="color:#75715e">-- -9223372036854775807</span>
+<span style="color:#75715e">-- 原因</span>
+<span style="color:#75715e">-- -9223372036854775808 * (-1) = -9223372036854775808</span>
+<span style="color:#75715e">-- 64为整数最大表示范围 9223372036854775807 刚好溢出 1</span>
+<span style="color:#75715e">-- 1 - (-9223372036854775808) = 1 + (-9223372036854775808)</span>
+<span style="color:#75715e">-- -9223372036854775808 = 0x8000000000000000</span>
+<span style="color:#75715e">-- 1 + 0x8000000000000000 = 0x8000000000000001 = -9223372036854775807</span>
+print(e<span style="color:#f92672">==</span>a) <span style="color:#75715e">-- true</span>
+print(e<span style="color:#f92672">==</span>b) <span style="color:#75715e">-- true</span>
+print(e) <span style="color:#75715e">-- -9.2233720368548e+18</span>
+</code></pre></div><p>再换一段代码测试 优化是否能正常工作</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> a<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775808</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">9223372036854775807</span>
+print(a)
+</code></pre></div><p>查看指令</p>
+<pre><code>0+ params, 3 slots, 1 upvalue, 1 local, 1 constant, 0 functions
+        1       [1]     VARARGPREP      0
+        2       [17]    LOADI           0 -1
+        3       [18]    GETTABUP        1 0 0   ; _ENV &quot;print&quot;
+        4       [18]    MOVE            2 0
+        5       [18]    CALL            1 2 1   ; 1 in 0 out
+        6       [18]    RETURN          1 1 1   ; 0 out
+</code></pre><p>看结果没问题 用一段时间试试</p>
+<p>补充一下代码测速</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> integerMin <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854775808</span>
+<span style="color:#75715e">-- local integerMin = -9223372036854775807 - 1</span>
+
+<span style="color:#66d9ef">local</span> io <span style="color:#f92672">=</span> require <span style="color:#e6db74">&#34;io&#34;</span>
+
+<span style="color:#66d9ef">local</span> fp <span style="color:#f92672">=</span> io.open(<span style="color:#e6db74">&#34;tmp.lua&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>)
+fp:write(<span style="color:#e6db74">&#34;local tmp = {&#34;</span>)
+fp:write(integerMin)
+
+<span style="color:#66d9ef">for</span> index <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854775807</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854000000</span> <span style="color:#66d9ef">do</span>
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>)
+    fp:write(index)
+<span style="color:#66d9ef">end</span>
+fp:write(<span style="color:#e6db74">&#34;}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+fp:write(<span style="color:#e6db74">&#34;return tmp&#34;</span>)
+fp:close()
+
+start_time <span style="color:#f92672">=</span> os.clock()
+<span style="color:#66d9ef">local</span> tmp <span style="color:#f92672">=</span> require <span style="color:#e6db74">&#34;tmp&#34;</span>
+end_time <span style="color:#f92672">=</span> os.clock()
+print(<span style="color:#f92672">#</span>tmp)
+print(end_time <span style="color:#f92672">-</span> start_time)
+</code></pre></div><p>没有修改的输出</p>
+<pre><code>775809
+0.197
+</code></pre><p>修改过的输出</p>
+<pre><code>775809
+0.177
+</code></pre><p>我修改过的竟然还要快？
+分析原因</p>
+<ol>
+<li>struct LexState 的结构我也顺便优化了一下把指针放结构体到前面，这样改</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> LexState {
+  <span style="color:#66d9ef">struct</span> FuncState <span style="color:#f92672">*</span>fs;  <span style="color:#75715e">/* current function (parser) */</span>
+  <span style="color:#66d9ef">struct</span> lua_State <span style="color:#f92672">*</span>L;
+  ZIO <span style="color:#f92672">*</span>z;  <span style="color:#75715e">/* input stream */</span>
+  Mbuffer <span style="color:#f92672">*</span>buff;  <span style="color:#75715e">/* buffer for tokens */</span>
+  Table <span style="color:#f92672">*</span>h;  <span style="color:#75715e">/* to avoid collection/reuse strings */</span>
+  <span style="color:#66d9ef">struct</span> Dyndata <span style="color:#f92672">*</span>dyd;  <span style="color:#75715e">/* dynamic structures used by the parser */</span>
+  TString <span style="color:#f92672">*</span>source;  <span style="color:#75715e">/* current source name */</span>
+  TString <span style="color:#f92672">*</span>envn;  <span style="color:#75715e">/* environment variable name */</span>
+  Token t;  <span style="color:#75715e">/* current token */</span>
+  Token lookahead;  <span style="color:#75715e">/* look ahead token */</span>
+  <span style="color:#66d9ef">int</span> current;  <span style="color:#75715e">/* current character (charint) */</span>
+  <span style="color:#66d9ef">int</span> linenumber;  <span style="color:#75715e">/* input line counter */</span>
+  <span style="color:#66d9ef">int</span> lastline;  <span style="color:#75715e">/* line of last token &#39;consumed&#39; */</span>
+  <span style="color:#66d9ef">int</span> prefixMinus;  <span style="color:#75715e">/* prefix equal minus */</span>
+} LexState;
+</code></pre></div><p>注意代码只改过先后顺序,编译运行</p>
+<pre><code>775809
+0.187
+</code></pre><p>还有0.01的差距
+2. 测试集问题
+我的测试集是选用负数来测
+修改的代码部分负数部分没有执行 luaK_prefix -&gt; constfolding 这样的优化
+换个正负数差不多的测试集试试</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#75715e">-- ...</span>
+<span style="color:#66d9ef">for</span> index <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854775807</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854000000</span> <span style="color:#66d9ef">do</span>
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>)
+    fp:write(index)
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>) 			<span style="color:#75715e">-- +++++++</span>
+    fp:write(index <span style="color:#f92672">*</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)	<span style="color:#75715e">-- +++++++</span>
+<span style="color:#66d9ef">end</span>
+<span style="color:#75715e">-- ...</span>
+</code></pre></div><p>我修改的代码速度</p>
+<pre><code>1551617
+0.356
+</code></pre><p>官方代码优化内存布局</p>
+<pre><code>1551617
+0.37
+</code></pre><p>还是能快0.01秒</p>
+<p>那都是正数情况呢</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> begin <span style="color:#f92672">=</span> <span style="color:#ae81ff">9223372036854000000</span>
+
+<span style="color:#66d9ef">local</span> io <span style="color:#f92672">=</span> require <span style="color:#e6db74">&#34;io&#34;</span>
+
+<span style="color:#66d9ef">local</span> fp <span style="color:#f92672">=</span> io.open(<span style="color:#e6db74">&#34;tmp.lua&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>)
+fp:write(<span style="color:#e6db74">&#34;local tmp = {&#34;</span>)
+fp:write(begin)
+
+<span style="color:#66d9ef">for</span> index <span style="color:#f92672">=</span> begin<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">9223372036854775807</span> <span style="color:#66d9ef">do</span>
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>)
+    fp:write(index)
+<span style="color:#66d9ef">end</span>
+<span style="color:#75715e">-- ...</span>
+</code></pre></div><p>我修改过的</p>
+<pre><code>775808
+0.169
+</code></pre><p>官方代码优化内存布局</p>
+<pre><code>775808
+0.169
+</code></pre><p>得出结论
+修改内存布局就可以提高 5%
+在此基础上
+在只负数时 我修改的快约 6%
+在正负数各占一半 我修改的快约 4%
+在只有正数时 性能几乎一样</p>
 
           </section>
       </p>
@@ -116,16 +338,17 @@
             <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
         
         
-        
-            
+            uzzzzz
         
         on
             
-                <a href="https://uuzzzga.github.io/my-blog/tags/blog/">#blog</a>,
+                <a href="https://uuzzzga.github.io/my-blog/tags/c/">#c</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/lua/">#lua</a>,
             
         
-        <time class="post-date" datetime="2017-01-01T00:00:00Z">
-            1 Jan 2017
+        <time class="post-date" datetime="2021-09-19T11:48:40&#43;08:00">
+            19 Sep 2021
         </time>
     </footer>
 </article>
@@ -134,12 +357,552 @@
 	   
 <article class="post post">
     <header class="post-header">
-        <h2 class="post-title"><a href="/my-blog/post/test/">test post</a></h2>
+        <h2 class="post-title"><a href="/my-blog/post/21/09/coroutines-ts-1/">c&#43;&#43;20 coroutines-ts 1</a></h2>
     </header>
     <section class="post-excerpt">
       <p>
           <section class="post-content">
-            <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">echo <span style="color:#e6db74">&#34;hello world !!&#34;</span>
+            <p>#目标
+目标正常执行以下代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;
+  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;
+  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>);
+}
+</code></pre></div><p>为什么会出错
+##编译器遇到co_await的处理</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">	<span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">MyCoroutine</span>(args...);
+</code></pre></div><p>以上代码会被处理为</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">return_type <span style="color:#a6e22e">MyCoroutine</span>(args...)
+{
+    <span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>    promise_type promise;
+
+    coro.promise<span style="color:#f92672">=</span>promise;
+    <span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+
+    <span style="color:#66d9ef">try</span> {
+        <span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>coro.await_ready()){
+            coro.await_suspend();
+        }
+        coro.await_resume();
+    } <span style="color:#66d9ef">catch</span> (...) {
+        promise.unhandled_exception();
+    }
+    <span style="color:#66d9ef">co_await</span> promise.final_suspend();<span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>可以看到 final_suspend 这里没有被try包裹
+所以 final_suspend 返回的 类/结构体 所有方法必须是 noexcept 的
+如std::suspend_never</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">suspend_never</span> {
+    <span style="color:#a6e22e">[[nodiscard]]</span> <span style="color:#66d9ef">constexpr</span> <span style="color:#66d9ef">bool</span> await_ready() <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> {
+        <span style="color:#66d9ef">return</span> true;
+    }
+
+    <span style="color:#66d9ef">constexpr</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">await_suspend</span>(coroutine_handle<span style="color:#f92672">&lt;&gt;</span>) <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> {}
+    <span style="color:#66d9ef">constexpr</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">await_resume</span>() <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> {}
+};
+</code></pre></div><p>其中的 <code>[[nodiscard]]</code> 是 C++17/c++20 加入的 属性记号
+详见 <a href="https://zh.cppreference.com/w/cpp/feature_test">https://zh.cppreference.com/w/cpp/feature_test</a></p>
+<p>对于我们的目标会被编译器处理成什么样</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(<span style="color:#ae81ff">2</span>);
+
+...
+
+task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+    <span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>    promise_type promise;
+
+    coro.promise<span style="color:#f92672">=</span>promise;
+    <span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+    <span style="color:#66d9ef">try</span> {
+        <span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+		
+		<span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>		promise_type promise;
+		coro.promise<span style="color:#f92672">=</span>promise;
+		<span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+		<span style="color:#66d9ef">try</span> {
+			<span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+			
+			<span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>			promise_type promise;
+			coro.promise<span style="color:#f92672">=</span>promise;
+			<span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+			<span style="color:#66d9ef">try</span> {
+				<span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+				
+				promise.return_value(<span style="color:#ae81ff">1</span>);<span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>			} <span style="color:#66d9ef">catch</span> (...) {
+				promise.unhandled_exception();
+			}
+			<span style="color:#66d9ef">co_await</span> promise.final_suspend();
+			<span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>			
+			
+			<span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>			promise_type promise;
+			coro.promise<span style="color:#f92672">=</span>promise;
+			<span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+			<span style="color:#66d9ef">try</span> {
+				<span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+				
+				promise.return_value(<span style="color:#ae81ff">0</span>);<span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>			} <span style="color:#66d9ef">catch</span> (...) {
+				promise.unhandled_exception();
+			}
+			<span style="color:#66d9ef">co_await</span> promise.final_suspend();
+			<span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>			
+			<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>		
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>coro.await_ready()){
+            coro.await_suspend();
+        }
+        coro.await_resume();
+    } <span style="color:#66d9ef">catch</span> (...) {
+        promise.unhandled_exception();
+    }
+    <span style="color:#66d9ef">co_await</span> promise.final_suspend();
+    <span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>我是根据执行先后顺序来推测的
+里面有两个协程 执行了 initial_suspend 后 没有执行 coro的方法 直接执行return_value
+设置值、执行final_suspend结束了</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;<span style="color:#75715e">//这里
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">//这里
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>);
+}
+</code></pre></div><p>这会出现什么问题？
+如果你在await_suspend中把 handle 存到数组里，并在循环中执行，如</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">//...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">await_suspend</span>(std<span style="color:#f92672">::</span>coroutine_handle<span style="color:#f92672">&lt;&gt;</span> handle)
+{
+  <span style="color:#66d9ef">auto</span> loop <span style="color:#f92672">=</span> getEventLoopOfCurrentThread();
+  loop<span style="color:#f92672">-&gt;</span>addCoroHandle(handle);
+}
+<span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">void</span> EventLoop<span style="color:#f92672">::</span>coroHandle(){
+	<span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">auto</span> handle:reday_coro_){ <span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>		handle();<span style="color:#75715e">//等效于 handle.resume();
+</span><span style="color:#75715e"></span>	}
+	reday_coro_.clear();
+}
+</code></pre></div><p>当x为4时，猜猜执行如下代码会怎样</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;
+  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;
+  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)<span style="color:#75715e">/*位置1*/</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>)<span style="color:#75715e">/*位置2*/</span>;
+}
+</code></pre></div><p>由于我们是在 await_suspend 中加入数组 但是这是在递归 会在执行完 位置1 执行位置2触发 await_suspend加入到尾部，但原来的尾部是什么？co_return,它会先返回在执行 位置2
+所以需要 设计 前后关系
+##前后关系
+在 await_suspend 建立关系 并在 final_suspend 中处理前后关系
+由于其中一段被编译器展开,在初始化时已经执行过 final_suspend 了
+然后你就会发现程序什么都没执行</p>
+<p>因为 执行顺序是
+x=4 进入位置1,
+x=3 进入位置1,
+x=2 进入位置1,
+x=1 返回1, 在初始化时就执行过 final_suspend
+x=2 进入位置2, 要完成 &lsquo;x=2 进入位置1&rsquo;
+x=0 返回0, 在初始化时就执行过 final_suspend
+x=3 进入位置2, 要完成 &lsquo;x=3 进入位置1&rsquo;
+x=1 返回1,
+x=4 进入位置2
+&hellip;</p>
+<p>当在执行 &lsquo;x=2 进入位置2&rsquo; 对应的await_suspend时，在确定前后关系之前就执行过 final_suspend &lsquo;x=1 返回1&rsquo; 了，我们的代码是建立在 所有协程先执行 await_suspend 确定前后关系，在执行 final_suspend 执行 前后关系表 对应的 coro.resume(), 但是在初始化时 执行&rsquo;x=1 返回1' 我们此时 前后关系表 没有建立、为空，
+所以什么都没执行
+##解决办法
+final_suspend 执行 前后关系表 对应的 coro.resume()时如果没找到 对应的 则存到数组里 事件循环 数组遍历 执行对应的coro.resume()</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/">#c&#43;&#43;20</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;2a/">#c&#43;&#43;2a</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/coroutines-ts/">#coroutines-ts</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-01T11:01:40&#43;08:00">
+            1 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/09/coroutines-ts-2/">c&#43;&#43;20 coroutines-ts 2</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <p>#目标
+目标 设计一个scheduler调度器 正常执行以下代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;
+  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;
+  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>);
+}
+</code></pre></div><p>未完</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/">#c&#43;&#43;20</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;2a/">#c&#43;&#43;2a</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/coroutines-ts/">#coroutines-ts</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-01T11:01:40&#43;08:00">
+            1 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/09/coroutines-ts-3/">c&#43;&#43;20 coroutines-ts 3</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="异常">异常</h2>
+<p>对于以下代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">	<span style="color:#66d9ef">try</span>{
+		<span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">MyCoroutine</span>(args...);
+	}<span style="color:#66d9ef">catch</span>(XXX e){
+	
+	}
+</code></pre></div><p>会被处理为</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">return_type <span style="color:#a6e22e">MyCoroutine</span>(args...)
+{
+    <span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>    promise_type promise;
+
+    coro.promise<span style="color:#f92672">=</span>promise;
+    <span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+
+    <span style="color:#66d9ef">try</span> {
+        <span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>coro.await_ready()){
+            coro.await_suspend();
+        }
+		<span style="color:#66d9ef">if</span>(promise.cancellation_requested())
+			<span style="color:#66d9ef">goto</span> end<span style="color:#f92672">-</span>label;
+        ret coro.await_resume();
+    } <span style="color:#66d9ef">catch</span> (...) {
+        promise.set_exception(std<span style="color:#f92672">::</span>current_exception());
+    }
+	final_suspend:
+    <span style="color:#66d9ef">co_await</span> promise.final_suspend();
+
+    <span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>未完</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/">#c&#43;&#43;20</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;2a/">#c&#43;&#43;2a</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/coroutines-ts/">#coroutines-ts</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-01T11:01:40&#43;08:00">
+            1 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/bgfx-02/">Bgfx 02</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="poscolorvertex-类">PosColorVertex 类</h2>
+<h3 id="ms_layout-静态属性">ms_layout 静态属性</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> bgfx<span style="color:#f92672">::</span>VertexLayout ms_layout;
+</code></pre></div><h3 id="init-静态方法">init 静态方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">ms_layout
+	.begin()
+	.add(bgfx<span style="color:#f92672">::</span>Attrib<span style="color:#f92672">::</span>Position, <span style="color:#ae81ff">3</span>, bgfx<span style="color:#f92672">::</span>AttribType<span style="color:#f92672">::</span>Float)
+	.add(bgfx<span style="color:#f92672">::</span>Attrib<span style="color:#f92672">::</span>Color0,   <span style="color:#ae81ff">4</span>, bgfx<span style="color:#f92672">::</span>AttribType<span style="color:#f92672">::</span>Uint8, true)
+	.end();
+</code></pre></div><p>初始化 ms_layout
+ms_layout 类型储存着 其他属性 的 类型顺序</p>
+<h3 id="其他属性">其他属性</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">float</span> m_x;
+<span style="color:#66d9ef">float</span> m_y;
+<span style="color:#66d9ef">float</span> m_z;
+<span style="color:#66d9ef">uint32_t</span> m_abgr;
+</code></pre></div><h2 id="examplecubes-类">ExampleCubes 类</h2>
+<h3 id="init-方法">init 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Create static vertex buffer.
+</span><span style="color:#75715e"></span>m_vbh <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>createVertexBuffer(
+	<span style="color:#75715e">// Static data can be passed with bgfx::makeRef
+</span><span style="color:#75715e"></span>	  bgfx<span style="color:#f92672">::</span>makeRef(s_cubeVertices, <span style="color:#66d9ef">sizeof</span>(s_cubeVertices) )
+	, PosColorVertex<span style="color:#f92672">::</span>ms_layout
+	);
+</code></pre></div><p>bgfx::makeRef 构造一个 指针
+构造一个 vbh 数据 s_cubeVertices 长度 s_cubeVertices的长度 ，数组结构顺序 PosColorVertex::ms_layout
+vbh 对应着opengl 的vbo</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Create static index buffer for triangle list rendering.
+</span><span style="color:#75715e"></span>m_ibh[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>createIndexBuffer(
+	<span style="color:#75715e">// Static data can be passed with bgfx::makeRef
+</span><span style="color:#75715e"></span>	bgfx<span style="color:#f92672">::</span>makeRef(s_cubeTriList, <span style="color:#66d9ef">sizeof</span>(s_cubeTriList) )
+	);
+
+...
+
+<span style="color:#75715e">// Create static index buffer for point list rendering.
+</span><span style="color:#75715e"></span>m_ibh[<span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>createIndexBuffer(
+	<span style="color:#75715e">// Static data can be passed with bgfx::makeRef
+</span><span style="color:#75715e"></span>	bgfx<span style="color:#f92672">::</span>makeRef(s_cubePoints, <span style="color:#66d9ef">sizeof</span>(s_cubePoints) )
+	);
+</code></pre></div><p>储存着vbh的下标，用下标来代替vbh
+ibh 对应着opengl 的EBO</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Create program from shaders.
+</span><span style="color:#75715e"></span>m_program <span style="color:#f92672">=</span> loadProgram(<span style="color:#e6db74">&#34;vs_cubes&#34;</span>, <span style="color:#e6db74">&#34;fs_cubes&#34;</span>);
+</code></pre></div><p>创建并加载 着色器</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/bgfx/">#bgfx</a>,
+            
+        
+        <time class="post-date" datetime="2021-03-30T16:36:40&#43;08:00">
+            30 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/bgfx-01/">Bgfx 01</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="examplehelloworld-类">ExampleHelloWorld 类</h2>
+<h3 id="init-方法">init 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>Init init;
+init.type     <span style="color:#f92672">=</span> args.m_type;
+init.vendorId <span style="color:#f92672">=</span> args.m_pciId;
+init.resolution.width  <span style="color:#f92672">=</span> m_width;
+init.resolution.height <span style="color:#f92672">=</span> m_height;
+init.resolution.reset  <span style="color:#f92672">=</span> m_reset;
+bgfx<span style="color:#f92672">::</span>init(init);
+</code></pre></div><p>对bgfx 进行初始化
+可以指定渲染引擎
+<code>init.type = bgfx::RendererType::Vulkan;</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">m_debug  <span style="color:#f92672">=</span> BGFX_DEBUG_TEXT;
+...
+bgfx<span style="color:#f92672">::</span>setDebug(m_debug);
+</code></pre></div><p>设置debug信息
+其他可选项有</p>
+<ol>
+<li>BGFX_DEBUG_IFH 跳过所有呈现调用。这在分析CPU和GPU之间的潜在瓶颈时非常有用。</li>
+<li>BGFX_DEBUG_PROFILER 启用探查器(profiler)。</li>
+<li>BGFX_DEBUG_STATS 显示内部统计信息。</li>
+<li>BGFX_DEBUG_TEXT 显示调试文本。</li>
+<li>BGFX_DEBUG_WIREFRAME 线框渲染。所有渲染原语都将渲染为线。</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Set view 0 clear state.
+</span><span style="color:#75715e"></span>bgfx<span style="color:#f92672">::</span>setViewClear(<span style="color:#ae81ff">0</span>
+	, BGFX_CLEAR_COLOR<span style="color:#f92672">|</span>BGFX_CLEAR_DEPTH
+	, <span style="color:#ae81ff">0x303030ff</span>
+	, <span style="color:#ae81ff">1.0f</span>
+	, <span style="color:#ae81ff">0</span>
+	);
+</code></pre></div><p>[in] _id: View id.
+[in] <em>flags: 清除标志。使用 BGFX_CLEAR_NONE 移除任何清除操作。请参见： BGFX_CLEAR</em>*.
+[in] _rgba: 颜色清除值。
+[in] _depth: 深度清除值。
+[in] _stencil: Stencil 清除值。
+设置 BGFX_CLEAR_COLOR|BGFX_CLEAR_DEPTH 清除时使用 颜色和深度 清除后颜色为 303030 深度为1.0</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">imguiCreate();
+</code></pre></div><p>使用了imgui 做窗口</p>
+<h3 id="shutdown-方法">shutdown 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">shutdown</span>() <span style="color:#66d9ef">override</span>
+{
+	imguiDestroy();
+
+	<span style="color:#75715e">// Shutdown bgfx.
+</span><span style="color:#75715e"></span>	bgfx<span style="color:#f92672">::</span>shutdown();
+
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>先关闭窗口再关闭渲染</p>
+<h3 id="update-方法">update 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>entry<span style="color:#f92672">::</span>processEvents(m_width, m_height, m_debug, m_reset, <span style="color:#f92672">&amp;</span>m_mouseState) )
+{
+	...
+}
+<span style="color:#66d9ef">return</span> false;
+</code></pre></div><p>processEvents 无阻判断是否 发生事件
+处理事件
+Axis 手柄 轴事件
+Char,
+Exit 退出事件 发生后 要手动检查是否退出
+Gamepad 手柄事件
+Key 键盘事件
+Mouse 鼠标事件
+Size 窗口大小改变事件
+Window 窗口事件
+Suspend 暂停事件
+DropFile 拖拽文件事件</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>setViewRect(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">uint16_t</span>(m_width), <span style="color:#66d9ef">uint16_t</span>(m_height) );
+</code></pre></div><p>为 id为0的 view 设置视图矩形。绘制图元外部视图将被剪裁。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>touch(<span style="color:#ae81ff">0</span>);
+</code></pre></div><p>如果没有其他绘制调用提交到视图0，则此虚拟绘制调用用于确保视图0被清除。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>dbgTextClear();
+</code></pre></div><p>清除内部调试文本缓冲区。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>dbgTextImage(
+	  bx<span style="color:#f92672">::</span>max<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">uint16_t</span><span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">uint16_t</span>(m_width <span style="color:#f92672">/</span><span style="color:#ae81ff">2</span><span style="color:#f92672">/</span><span style="color:#ae81ff">8</span> ), <span style="color:#ae81ff">20</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">20</span>
+	, bx<span style="color:#f92672">::</span>max<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">uint16_t</span><span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">uint16_t</span>(m_height<span style="color:#f92672">/</span><span style="color:#ae81ff">2</span><span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>),  <span style="color:#ae81ff">6</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">6</span>
+	, <span style="color:#ae81ff">40</span>
+	, <span style="color:#ae81ff">12</span>
+	, s_logo
+	, <span style="color:#ae81ff">160</span>
+	);
+</code></pre></div><p>_x , _y:  左上角 2D位置.
+_width , _height: 图像宽度和高度。
+_data: 原始图像数据（字符/属性原始编码）。
+_pitch: 图像间距（字节）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;Color can be changed with ANSI </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[9;me</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[10;ms</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[11;mc</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[12;ma</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[13;mp</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[14;me</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[0m code too.&#34;</span>);
+
+bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">80</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;0m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;1m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 2m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 3m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 4m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 5m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 6m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 7m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[0m&#34;</span>);
+bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">80</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;8m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;9m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;10m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;11m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;12m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;13m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;14m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;15m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[0m&#34;</span>);
+
+<span style="color:#66d9ef">const</span> bgfx<span style="color:#f92672">::</span>Stats<span style="color:#f92672">*</span> stats <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>getStats();
+bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;Backbuffer %dW x %dH in pixels, debug text %dW x %dH in characters.&#34;</span>
+	, stats<span style="color:#f92672">-&gt;</span>width
+	, stats<span style="color:#f92672">-&gt;</span>height
+	, stats<span style="color:#f92672">-&gt;</span>textWidth
+	, stats<span style="color:#f92672">-&gt;</span>textHeight
+	);
+</code></pre></div><p>打印到内部调试文本字符缓冲区
+_x , _y:  左上角 单位 字符
+_attr: 调色板。其中前4位表示背景索引，底部4位表示标准VGA文本调色板（ANSI转义代码）的前景色。
+_format: printf 风格的 格式化字符串. 可使用 ANSI转义代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//前进到下一帧。渲染线程将被踢到处理提交的渲染原语。
+</span><span style="color:#75715e"></span>bgfx<span style="color:#f92672">::</span>frame();
+<span style="color:#66d9ef">return</span> true;
 </code></pre></div>
           </section>
       </p>
@@ -150,18 +913,795 @@
             <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
         
         
-        
-            
+            uzzzzz
         
         on
             
-                <a href="https://uuzzzga.github.io/my-blog/tags/blog/">#blog</a>,
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/bgfx/">#bgfx</a>,
+            
+        
+        <time class="post-date" datetime="2021-03-30T09:45:15&#43;08:00">
+            30 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/hellobullet-02/">HelloBullet 02</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="物理计算-类的关系">物理计算 类的关系</h2>
+<blockquote>
+</blockquote>
+<h3 id="抽象类-commonexampleinterface">抽象类 CommonExampleInterface</h3>
+<blockquote>
+</blockquote>
+<h4 id="初始化-和-结束">初始化 和 结束</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">initPhysics</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">exitPhysics</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="计算物理">计算物理</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">stepSimulation</span>(<span style="color:#66d9ef">float</span> deltaTime) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="图像gui相关">图像GUI相关</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">updateGraphics</span>() {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">renderScene</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<p>窗口回执</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseMoveCallback</span>(<span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseButtonCallback</span>(<span style="color:#66d9ef">int</span> button, <span style="color:#66d9ef">int</span> state, <span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">keyboardCallback</span>(<span style="color:#66d9ef">int</span> key, <span style="color:#66d9ef">int</span> state) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="debug相关">debug相关</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">physicsDebugDraw</span>(<span style="color:#66d9ef">int</span> debugFlags) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">//目前，我们在 Bullet/src/LinearMath/btIDebugDraw.h
+</span><span style="color:#75715e">//只有在切换演示时才调用 resetCamera。这样你可以重新启动（initPhysics）并更容易地在特定的位置观看
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">resetCamera</span>(){};
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="vr相关">vr相关</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrControllerMoveCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> analogAxis, <span style="color:#66d9ef">float</span> auxAnalogAxes[<span style="color:#ae81ff">10</span>]) {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrControllerButtonCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">int</span> button, <span style="color:#66d9ef">int</span> state, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>]) {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrHMDMoveCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>]) {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrGenericTrackerMoveCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>]) {}
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="处理命令行参数">处理命令行参数</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">processCommandLineArgs</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> argv[]){};
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="自定义-类的接口">自定义 类的接口</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CommonExampleInterface</span><span style="color:#f92672">*</span>(CreateFunc)(CommonExampleOptions<span style="color:#f92672">&amp;</span> options);
+</code></pre></div><p>满足这个类型即可</p>
+<blockquote>
+</blockquote>
+<h3 id="commonrigidbodybase-共有基类">CommonRigidBodyBase 共有基类</h3>
+<blockquote>
+</blockquote>
+<h4 id="属性">属性</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//使用内存管理工具 管理 btCollisionShape指针 物体的物理形状
+</span><span style="color:#75715e"></span>btAlignedObjectArray<span style="color:#f92672">&lt;</span>btCollisionShape<span style="color:#f92672">*&gt;</span> m_collisionShapes;
+
+<span style="color:#75715e">//Broad-Phase
+</span><span style="color:#75715e"></span>btBroadphaseInterface<span style="color:#f92672">*</span> m_broadphase;
+
+<span style="color:#75715e">//碰撞调度器
+</span><span style="color:#75715e"></span>btCollisionDispatcher<span style="color:#f92672">*</span> m_dispatcher;
+
+<span style="color:#75715e">//约束解算器
+</span><span style="color:#75715e"></span>btConstraintSolver<span style="color:#f92672">*</span> m_solver;
+
+<span style="color:#75715e">//碰撞配置
+</span><span style="color:#75715e"></span>btDefaultCollisionConfiguration<span style="color:#f92672">*</span> m_collisionConfiguration;
+
+<span style="color:#75715e">//力学世界
+</span><span style="color:#75715e"></span>btDiscreteDynamicsWorld<span style="color:#f92672">*</span> m_dynamicsWorld;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="观察视角相关">观察视角相关</h4>
+<h5 id="属性-1">属性</h5>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//data for picking objects
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">btRigidBody</span><span style="color:#f92672">*</span> m_pickedBody;
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">btTypedConstraint</span><span style="color:#f92672">*</span> m_pickedConstraint;
+<span style="color:#66d9ef">int</span> m_savedState;
+btVector3 m_oldPickingPos;
+btVector3 m_hitPos;
+btScalar m_oldPickingDist;
+</code></pre></div><h5 id="方法">方法</h5>
+<ol>
+<li>mouseMoveCallback 鼠标移动回执</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseMoveCallback</span>(<span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y)
+{
+	CommonRenderInterface<span style="color:#f92672">*</span> renderer <span style="color:#f92672">=</span> m_guiHelper<span style="color:#f92672">-&gt;</span>getRenderInterface();
+
+	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>renderer)
+		{
+		btAssert(<span style="color:#ae81ff">0</span>);
+		<span style="color:#66d9ef">return</span> false;
+	}
+
+	btVector3 rayTo <span style="color:#f92672">=</span> getRayTo(<span style="color:#66d9ef">int</span>(x), <span style="color:#66d9ef">int</span>(y));
+	btVector3 rayFrom;
+	renderer<span style="color:#f92672">-&gt;</span>getActiveCamera()<span style="color:#f92672">-&gt;</span>getCameraPosition(rayFrom);
+	movePickedBody(rayFrom, rayTo);
+
+	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>执行getRayTo 把屏幕坐标转换成世界坐标也就是移动的目标点，通过gui的输入工具,获取相机内的物体的坐标也就是原来的坐标 执行 movePickedBody(rayFrom, rayTo); 移动物体
+2. movePickedBody</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">movePickedBody</span>(<span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayFromWorld, <span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayToWorld)
+{
+	<span style="color:#66d9ef">if</span> (m_pickedBody <span style="color:#f92672">&amp;&amp;</span> m_pickedConstraint)
+	{
+		btPoint2PointConstraint<span style="color:#f92672">*</span> pickCon <span style="color:#f92672">=</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span>btPoint2PointConstraint<span style="color:#f92672">*&gt;</span>(m_pickedConstraint);
+		<span style="color:#66d9ef">if</span> (pickCon)
+		{
+			<span style="color:#75715e">//keep it at the same picking distance
+</span><span style="color:#75715e"></span>
+			btVector3 newPivotB;
+
+			btVector3 dir <span style="color:#f92672">=</span> rayToWorld <span style="color:#f92672">-</span> rayFromWorld;
+			dir.normalize();
+			dir <span style="color:#f92672">*=</span> m_oldPickingDist;
+
+			newPivotB <span style="color:#f92672">=</span> rayFromWorld <span style="color:#f92672">+</span> dir;
+			pickCon<span style="color:#f92672">-&gt;</span>setPivotB(newPivotB);
+			<span style="color:#66d9ef">return</span> true;
+		}
+	}
+	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>如果选择物体 移动选择物体。rayFromWorld原来的坐标，rayToWorld目标坐标，dir移动的方向，normalize坐标和原点的线段方向不变长度为1，m_oldPickingDist 为移动距离的长度，setPivotB设置关节在第2个刚体坐标系中的位置
+3. mouseButtonCallback 鼠标点击回执</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseButtonCallback</span>(<span style="color:#66d9ef">int</span> button, <span style="color:#66d9ef">int</span> state, <span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y)
+{
+	CommonRenderInterface<span style="color:#f92672">*</span> renderer <span style="color:#f92672">=</span> m_guiHelper<span style="color:#f92672">-&gt;</span>getRenderInterface();
+
+	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>renderer)
+	{
+		btAssert(<span style="color:#ae81ff">0</span>);
+		<span style="color:#66d9ef">return</span> false;
+	}
+
+	CommonWindowInterface<span style="color:#f92672">*</span> window <span style="color:#f92672">=</span> m_guiHelper<span style="color:#f92672">-&gt;</span>getAppInterface()<span style="color:#f92672">-&gt;</span>m_window;
+
+<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">if</span> (state <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+	{
+		<span style="color:#66d9ef">if</span> (button <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> (<span style="color:#f92672">!</span>window<span style="color:#f92672">-&gt;</span>isModifierKeyPressed(B3G_ALT) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>window<span style="color:#f92672">-&gt;</span>isModifierKeyPressed(B3G_CONTROL)))
+		{
+			btVector3 camPos;
+			renderer<span style="color:#f92672">-&gt;</span>getActiveCamera()<span style="color:#f92672">-&gt;</span>getCameraPosition(camPos);
+
+			btVector3 rayFrom <span style="color:#f92672">=</span> camPos;
+			btVector3 rayTo <span style="color:#f92672">=</span> getRayTo(<span style="color:#66d9ef">int</span>(x), <span style="color:#66d9ef">int</span>(y));
+
+			pickBody(rayFrom, rayTo);
+		}
+	}
+	<span style="color:#66d9ef">else</span>
+	{
+		<span style="color:#66d9ef">if</span> (button <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+		{
+			removePickingConstraint();
+			<span style="color:#75715e">//remove p2p
+</span><span style="color:#75715e"></span>		}
+	}
+
+	<span style="color:#75715e">//printf(&#34;button=%d, state=%d\n&#34;,button,state);
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>button 按钮，state状态。按下左键时，获取相机指向的坐标，窗口坐标转换成世界坐标，执行pickBody
+4. pickBody</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">pickBody</span>(<span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayFromWorld, <span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayToWorld)
+{
+	<span style="color:#66d9ef">if</span> (m_dynamicsWorld <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+		<span style="color:#66d9ef">return</span> false;
+
+	btCollisionWorld<span style="color:#f92672">::</span>ClosestRayResultCallback rayCallback(rayFromWorld, rayToWorld);
+
+	rayCallback.m_flags <span style="color:#f92672">|=</span> btTriangleRaycastCallback<span style="color:#f92672">::</span>kF_UseGjkConvexCastRaytest;
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>rayTest(rayFromWorld, rayToWorld, rayCallback);
+	<span style="color:#66d9ef">if</span> (rayCallback.hasHit())
+	{
+		btVector3 pickPos <span style="color:#f92672">=</span> rayCallback.m_hitPointWorld;
+		btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> (btRigidBody<span style="color:#f92672">*</span>)btRigidBody<span style="color:#f92672">::</span>upcast(rayCallback.m_collisionObject);
+		<span style="color:#66d9ef">if</span> (body)
+		{
+			<span style="color:#75715e">//other exclusions?
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(body<span style="color:#f92672">-&gt;</span>isStaticObject() <span style="color:#f92672">||</span> body<span style="color:#f92672">-&gt;</span>isKinematicObject()))
+			{
+				m_pickedBody <span style="color:#f92672">=</span> body;
+				m_savedState <span style="color:#f92672">=</span> m_pickedBody<span style="color:#f92672">-&gt;</span>getActivationState();
+				m_pickedBody<span style="color:#f92672">-&gt;</span>setActivationState(DISABLE_DEACTIVATION);
+				<span style="color:#75715e">//printf(&#34;pickPos=%f,%f,%f\n&#34;,pickPos.getX(),pickPos.getY(),pickPos.getZ());
+</span><span style="color:#75715e"></span>				btVector3 localPivot <span style="color:#f92672">=</span> body<span style="color:#f92672">-&gt;</span>getCenterOfMassTransform().inverse() <span style="color:#f92672">*</span> pickPos;
+				btPoint2PointConstraint<span style="color:#f92672">*</span> p2p <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btPoint2PointConstraint(<span style="color:#f92672">*</span>body, localPivot);
+				m_dynamicsWorld<span style="color:#f92672">-&gt;</span>addConstraint(p2p, true);
+				m_pickedConstraint <span style="color:#f92672">=</span> p2p;
+				btScalar mousePickClamping <span style="color:#f92672">=</span> <span style="color:#ae81ff">30.f</span>;
+				p2p<span style="color:#f92672">-&gt;</span>m_setting.m_impulseClamp <span style="color:#f92672">=</span> mousePickClamping;
+				<span style="color:#75715e">//very weak constraint for picking
+</span><span style="color:#75715e"></span>				p2p<span style="color:#f92672">-&gt;</span>m_setting.m_tau <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.001f</span>;
+			}
+		}
+
+		m_oldPickingPos <span style="color:#f92672">=</span> rayToWorld;
+		m_hitPos <span style="color:#f92672">=</span> pickPos;
+		m_oldPickingDist <span style="color:#f92672">=</span> (pickPos <span style="color:#f92672">-</span> rayFromWorld).length();
+	}
+	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>ClosestRayResultCallback 用于获取鼠标指向最近物体的工具，设置flag 使用 凸面射线 gjk算法，
+<code>m_dynamicsWorld-&gt;rayTest(rayFromWorld, rayToWorld, rayCallback);</code>
+使用rayTest尝试获取 最近物体的工具，rayCallback.hasHit() 判断是否存在，
+<code>btVector3 pickPos = rayCallback.m_hitPointWorld;</code>
+获取选中 相对于物体原点的位置，
+<code>btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);</code>
+尝试将父类btCollisionObject 转换成子类btRigidBody upcast内部是用状态机和c风格转换实现的，
+转换成功后 排除 静态物体（没有质量）和 KinematicObject （其实他有isStaticOrKinematicObject方法），
+设置选中物体，保存物体原来状态，更改物体状态为 DISABLE_DEACTIVATION 失去活动 ，获取重心的变换矩阵 的反向 乘 pickPos 矩阵 点乘 向量，
+添加一个 点到点的约束 给 世界里的 被选中物体，设置夹住的效果 给约束 力量为 30，给选中物体非常弱的约束</p>
+<blockquote>
+</blockquote>
+<ol start="5">
+<li>removePickingConstraint</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">removePickingConstraint</span>()
+{
+	<span style="color:#66d9ef">if</span> (m_pickedConstraint)
+	{
+		m_pickedBody<span style="color:#f92672">-&gt;</span>forceActivationState(m_savedState);
+		m_pickedBody<span style="color:#f92672">-&gt;</span>activate();
+		m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeConstraint(m_pickedConstraint);
+		<span style="color:#66d9ef">delete</span> m_pickedConstraint;
+		m_pickedConstraint <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+		m_pickedBody <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	}
+}
+</code></pre></div><p>如果夹住的约束存在，恢复物体状态，激活，移除约束，释放 约束占用的内存，清空夹住的物体指针</p>
+<h4 id="物理引擎相关">物理引擎相关</h4>
+<blockquote>
+</blockquote>
+<h5 id="方法-1">方法</h5>
+<ol>
+<li>createEmptyDynamicsWorld</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">///collision configuration contains default setup for memory, collision setup
+</span><span style="color:#75715e"></span>m_collisionConfiguration <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultCollisionConfiguration();
+<span style="color:#75715e">//m_collisionConfiguration-&gt;setConvexConvexMultipointIterations();
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+</span><span style="color:#75715e"></span>m_dispatcher <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btCollisionDispatcher(m_collisionConfiguration);
+
+m_broadphase <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDbvtBroadphase();
+
+<span style="color:#75715e">///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+</span><span style="color:#75715e"></span>btSequentialImpulseConstraintSolver<span style="color:#f92672">*</span> sol <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btSequentialImpulseConstraintSolver;
+m_solver <span style="color:#f92672">=</span> sol;
+
+m_dynamicsWorld <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
+
+m_dynamicsWorld<span style="color:#f92672">-&gt;</span>setGravity(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">0</span>));
+</code></pre></div><p>默认 碰撞配置
+默认 碰撞调度器
+通用的Broad-Phase
+默认 约束求解器
+创建一个力学世界
+设置重力方向
+2. createBoxShape</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btBoxShape<span style="color:#f92672">*</span> box <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btBoxShape(halfExtents);
+<span style="color:#66d9ef">return</span> box;
+</code></pre></div><ol start="3">
+<li>createRigidBody</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btRigidBody<span style="color:#f92672">*</span> <span style="color:#a6e22e">createRigidBody</span>(<span style="color:#66d9ef">float</span> mass, <span style="color:#66d9ef">const</span> btTransform<span style="color:#f92672">&amp;</span> startTransform, btCollisionShape<span style="color:#f92672">*</span> shape, <span style="color:#66d9ef">const</span> btVector4<span style="color:#f92672">&amp;</span> color <span style="color:#f92672">=</span> btVector4(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>))
+{
+	btAssert((<span style="color:#f92672">!</span>shape <span style="color:#f92672">||</span> shape<span style="color:#f92672">-&gt;</span>getShapeType() <span style="color:#f92672">!=</span> INVALID_SHAPE_PROXYTYPE));
+
+	<span style="color:#75715e">//rigidbody is dynamic if and only if mass is non zero, otherwise static
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">bool</span> isDynamic <span style="color:#f92672">=</span> (mass <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0.f</span>);
+
+	btVector3 localInertia(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+	<span style="color:#66d9ef">if</span> (isDynamic)
+		shape<span style="color:#f92672">-&gt;</span>calculateLocalInertia(mass, localInertia);
+
+	<span style="color:#75715e">//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes &#39;active&#39; objects
+</span><span style="color:#75715e"></span>
+	btDefaultMotionState<span style="color:#f92672">*</span> myMotionState <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultMotionState(startTransform);
+
+	btRigidBody<span style="color:#f92672">::</span>btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
+
+	btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btRigidBody(cInfo);
+	<span style="color:#75715e">//body-&gt;setContactProcessingThreshold(m_dfaultContactProcessingThre
+</span><span style="color:#75715e"></span>
+	body<span style="color:#f92672">-&gt;</span>setUserIndex(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>addRigidBody(body);
+	<span style="color:#66d9ef">return</span> body;
+}
+</code></pre></div><ol start="4">
+<li>deleteRigidBody</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deleteRigidBody</span>(btRigidBody<span style="color:#f92672">*</span> body)
+{
+	<span style="color:#66d9ef">int</span> graphicsUid <span style="color:#f92672">=</span> body<span style="color:#f92672">-&gt;</span>getUserIndex();
+	m_guiHelper<span style="color:#f92672">-&gt;</span>removeGraphicsInstance(graphicsUid);
+
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeRigidBody(body);
+	btMotionState<span style="color:#f92672">*</span> ms <span style="color:#f92672">=</span> body<span style="color:#f92672">-&gt;</span>getMotionState();
+	<span style="color:#66d9ef">delete</span> body;
+	<span style="color:#66d9ef">delete</span> ms;
+}
+</code></pre></div><ol start="5">
+<li>exitPhysics</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">exitPhysics</span>()
+{
+	removePickingConstraint();
+	<span style="color:#75715e">//cleanup in the reverse order of creation/initialization
+</span><span style="color:#75715e"></span>
+	<span style="color:#75715e">//remove the rigidbodies from the dynamics world and delete them
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">if</span> (m_dynamicsWorld)
+	{
+		<span style="color:#66d9ef">int</span> i;
+		<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumConstraints() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
+		{
+			m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeConstraint(m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getConstraint(i));
+		}
+		<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumCollisionObjects() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
+		{
+			btCollisionObject<span style="color:#f92672">*</span> obj <span style="color:#f92672">=</span> m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getCollisionObjectArray()[i];
+			btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> btRigidBody<span style="color:#f92672">::</span>upcast(obj);
+			<span style="color:#66d9ef">if</span> (body <span style="color:#f92672">&amp;&amp;</span> body<span style="color:#f92672">-&gt;</span>getMotionState())
+			{
+				<span style="color:#66d9ef">delete</span> body<span style="color:#f92672">-&gt;</span>getMotionState();
+			}
+			m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeCollisionObject(obj);
+			<span style="color:#66d9ef">delete</span> obj;
+		}
+	}
+	<span style="color:#75715e">//delete collision shapes
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> m_collisionShapes.size(); j<span style="color:#f92672">++</span>)
+	{
+		btCollisionShape<span style="color:#f92672">*</span> shape <span style="color:#f92672">=</span> m_collisionShapes[j];
+		<span style="color:#66d9ef">delete</span> shape;
+	}
+	m_collisionShapes.clear();
+
+	<span style="color:#66d9ef">delete</span> m_dynamicsWorld;
+	m_dynamicsWorld <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_solver;
+	m_solver <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_broadphase;
+	m_broadphase <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_dispatcher;
+	m_dispatcher <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_collisionConfiguration;
+	m_collisionConfiguration <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>逆序移除约束
+逆序移除碰撞对象 有使用MotionState的话 移除 MotionState
+清空内存管理器 m_collisionShapes 管理的物体
+删除世界
+。。。</p>
+<blockquote>
+</blockquote>
+<h3 id="basicexample-应用">BasicExample 应用</h3>
+<h4 id="方法-2">方法</h4>
+<h5 id="initphysics">initPhysics</h5>
+<p>设置高度轴</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">m_guiHelper<span style="color:#f92672">-&gt;</span>setUpAxis(<span style="color:#ae81ff">1</span>);
+</code></pre></div><p>1y 2z,只支持Y Z</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">createEmptyDynamicsWorld();
+</code></pre></div><p>执行 createEmptyDynamicsWorld(); 初始化</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//m_dynamicsWorld-&gt;setGravity(btVector3(0,0,0));
+</span><span style="color:#75715e"></span>m_guiHelper<span style="color:#f92672">-&gt;</span>createPhysicsDebugDrawer(m_dynamicsWorld);
+
+<span style="color:#66d9ef">if</span> (m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getDebugDrawer())
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getDebugDrawer()<span style="color:#f92672">-&gt;</span>setDebugMode(btIDebugDraw<span style="color:#f92672">::</span>DBG_DrawWireframe <span style="color:#f92672">+</span> btIDebugDraw<span style="color:#f92672">::</span>DBG_DrawContactPoints);
+</code></pre></div><p>设置debug</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">///create a few basic rigid bodies
+</span><span style="color:#75715e"></span>btBoxShape<span style="color:#f92672">*</span> groundShape <span style="color:#f92672">=</span> createBoxShape(btVector3(btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>)));
+
+<span style="color:#75715e">//groundShape-&gt;initializePolyhedralFeatures();
+</span><span style="color:#75715e">//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),50);
+</span><span style="color:#75715e"></span>
+m_collisionShapes.push_back(groundShape);
+
+btTransform groundTransform;
+groundTransform.setIdentity();
+groundTransform.setOrigin(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">0</span>));
+
+{
+	btScalar <span style="color:#a6e22e">mass</span>(<span style="color:#ae81ff">0.</span>);
+	createRigidBody(mass, groundTransform, groundShape, btVector4(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>));
+}
+</code></pre></div><p>创建 地面</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">{
+	<span style="color:#75715e">//create a few dynamic rigidbodies
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Re-using the same collision is better for memory usage and performance
+</span><span style="color:#75715e"></span>
+	btBoxShape<span style="color:#f92672">*</span> colShape <span style="color:#f92672">=</span> createBoxShape(btVector3(<span style="color:#ae81ff">.1</span>, <span style="color:#ae81ff">.1</span>, <span style="color:#ae81ff">.1</span>));
+
+	<span style="color:#75715e">//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+</span><span style="color:#75715e"></span>	m_collisionShapes.push_back(colShape);
+
+	<span style="color:#75715e">/// Create Dynamic Objects
+</span><span style="color:#75715e"></span>	btTransform startTransform;
+	startTransform.setIdentity();
+
+	btScalar <span style="color:#a6e22e">mass</span>(<span style="color:#ae81ff">1.f</span>);
+
+	<span style="color:#75715e">//rigidbody is dynamic if and only if mass is non zero, otherwise static
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">bool</span> isDynamic <span style="color:#f92672">=</span> (mass <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0.f</span>);
+
+	btVector3 <span style="color:#a6e22e">localInertia</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+	<span style="color:#66d9ef">if</span> (isDynamic)
+		colShape<span style="color:#f92672">-&gt;</span>calculateLocalInertia(mass, localInertia);
+
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> k <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; k <span style="color:#f92672">&lt;</span> ARRAY_SIZE_Y; k<span style="color:#f92672">++</span>)
+	{
+		<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> ARRAY_SIZE_X; i<span style="color:#f92672">++</span>)
+		{
+			<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> ARRAY_SIZE_Z; j<span style="color:#f92672">++</span>)
+			{
+				startTransform.setOrigin(btVector3(
+					btScalar(<span style="color:#ae81ff">0.2</span> <span style="color:#f92672">*</span> i),
+					btScalar(<span style="color:#ae81ff">2</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">.2</span> <span style="color:#f92672">*</span> k),
+					btScalar(<span style="color:#ae81ff">0.2</span> <span style="color:#f92672">*</span> j)));
+
+				createRigidBody(mass, startTransform, colShape);
+			}
+		}
+	}
+}
+
+m_guiHelper<span style="color:#f92672">-&gt;</span>autogenerateGraphicsObjects(m_dynamicsWorld);
+</code></pre></div><p>创建5x5x5 的方块，使用 autogenerateGraphicsObjects 把力学世界的 物体 生成 显示对象</p>
+<h5 id="renderscene">renderScene</h5>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> BasicExample<span style="color:#f92672">::</span>renderScene()
+{
+	CommonRigidBodyBase<span style="color:#f92672">::</span>renderScene();
+}
+</code></pre></div><h5 id="resetcamera">resetCamera</h5>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">resetCamera</span>()
+{
+	<span style="color:#66d9ef">float</span> dist <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;
+	<span style="color:#66d9ef">float</span> pitch <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">35</span>;
+	<span style="color:#66d9ef">float</span> yaw <span style="color:#f92672">=</span> <span style="color:#ae81ff">52</span>;
+	<span style="color:#66d9ef">float</span> targetPos[<span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> {<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>};
+	m_guiHelper<span style="color:#f92672">-&gt;</span>resetCamera(dist, yaw, pitch, targetPos[<span style="color:#ae81ff">0</span>], targetPos[<span style="color:#ae81ff">1</span>], targetPos[<span style="color:#ae81ff">2</span>]);
+}
+</code></pre></div><p>设置相机所在位置 看向位置</p>
+<blockquote>
+</blockquote>
+<h2 id="图形相关-类的关系">图形相关 类的关系</h2>
+<h3 id="guihelperinterface-抽象类">GUIHelperInterface 抽象类</h3>
+<h3 id="openglguihelper-实现">OpenGLGuiHelper 实现</h3>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/bullet/">#Bullet</a>,
+            
+        
+        <time class="post-date" datetime="2021-03-25T16:49:26&#43;08:00">
+            25 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/hellobullet-01/">HelloBullet 01</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="初始化">初始化</h2>
+<blockquote>
+</blockquote>
+<h3 id="碰撞配置">碰撞配置</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//默认 碰撞配置
+</span><span style="color:#75715e"></span>btDefaultCollisionConfiguration<span style="color:#f92672">*</span> collisionConfiguration <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultCollisionConfiguration();
+<span style="color:#75715e">//使用默认 碰撞调度器
+</span><span style="color:#75715e"></span>btCollisionDispatcher<span style="color:#f92672">*</span> dispatcher <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btCollisionDispatcher(collisionConfiguration);
+</code></pre></div><p>碰撞调度器所在 src/CollisionDispatch</p>
+<blockquote>
+</blockquote>
+<h3 id="broad-phase">Broad-Phase</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//通用的Broad-Phase
+</span><span style="color:#75715e"></span>btBroadphaseInterface<span style="color:#f92672">*</span> overlappingPairCache <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDbvtBroadphase();
+</code></pre></div><p><a href="https://zhuanlan.zhihu.com/p/113415779">https://zhuanlan.zhihu.com/p/113415779</a>
+如果把所有物体 两两计算碰撞 计算量 O(N^2)
+Broad-Phase 就是把明显不相关的 计算排除掉</p>
+<blockquote>
+</blockquote>
+<h3 id="约束求解器">约束求解器</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//默认约束求解器
+</span><span style="color:#75715e"></span>btSequentialImpulseConstraintSolver<span style="color:#f92672">*</span> solver <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btSequentialImpulseConstraintSolver;
+</code></pre></div><p>约束求解器 src/BulletDynamics/ConstraintSolver</p>
+<blockquote>
+</blockquote>
+<h3 id="创建一个力学世界">创建一个力学世界</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btDiscreteDynamicsWorld<span style="color:#f92672">*</span> dynamicsWorld <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="设置重力方向">设置重力方向</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dynamicsWorld<span style="color:#f92672">-&gt;</span>setGravity(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">0</span>));
+</code></pre></div><blockquote>
+</blockquote>
+<h2 id="创建-刚体">创建 刚体</h2>
+<blockquote>
+</blockquote>
+<h3 id="初始化内存-管理工具">初始化内存 管理工具</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btAlignedObjectArray<span style="color:#f92672">&lt;</span>btCollisionShape<span style="color:#f92672">*&gt;</span> collisionShapes;
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="创建一个立方体">创建一个立方体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btCollisionShape<span style="color:#f92672">*</span> groundShape <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btBoxShape(btVector3(btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>)));
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="交由内存管理工具管理">交由内存管理工具管理</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">collisionShapes.push_back(groundShape);
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="创建-变换矩阵">创建 变换矩阵</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btTransform groundTransform;
+groundTransform.setIdentity();
+groundTransform.setOrigin(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">56</span>, <span style="color:#ae81ff">0</span>));
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="局部-惯量">局部 惯量</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btVector3 <span style="color:#a6e22e">localInertia</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+<span style="color:#66d9ef">if</span> (isDynamic)
+	groundShape<span style="color:#f92672">-&gt;</span>calculateLocalInertia(mass, localInertia);
+</code></pre></div><p>只有有重量的物体才能是非静态、有局部惯量</p>
+<blockquote>
+</blockquote>
+<h3 id="运动轨迹-插值">运动轨迹 插值</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btDefaultMotionState<span style="color:#f92672">*</span> myMotionState <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultMotionState(groundTransform);
+</code></pre></div><p>使用默认的插值 同步“活动”对象</p>
+<blockquote>
+</blockquote>
+<h3 id="创建刚体">创建刚体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btRigidBody<span style="color:#f92672">::</span>btRigidBodyConstructionInfo rbInfo(mass, myMotionState, groundShape, localInertia);
+btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btRigidBody(rbInfo);
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="将刚体添加到力学世界">将刚体添加到力学世界</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dynamicsWorld<span style="color:#f92672">-&gt;</span>addRigidBody(body);
+</code></pre></div><blockquote>
+</blockquote>
+<h2 id="模拟计算">模拟计算</h2>
+<blockquote>
+</blockquote>
+<h3 id="步进模拟">步进模拟</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dynamicsWorld<span style="color:#f92672">-&gt;</span>stepSimulation(<span style="color:#ae81ff">1.f</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">60.f</span>, <span style="color:#ae81ff">10</span>);
+</code></pre></div><p>头文件定义</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">stepSimulation</span>( btScalar timeStep,<span style="color:#66d9ef">int</span> maxSubSteps<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, btScalar fixedTimeStep<span style="color:#f92672">=</span>btScalar(<span style="color:#ae81ff">1.</span>)<span style="color:#f92672">/</span>btScalar(<span style="color:#ae81ff">60.</span>));
+</code></pre></div><p>timeStep 剩余时间，maxSubSteps 最大执行步骤，fixedTimeStep 一步多长时间</p>
+<blockquote>
+</blockquote>
+<h3 id="得到模拟结果">得到模拟结果</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">
+<span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;i <span style="color:#f92672">&lt;</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumCollisionObjects(); <span style="color:#f92672">++</span>i){
+	btCollisionObject<span style="color:#f92672">*</span> obj <span style="color:#f92672">=</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getCollisionObjectArray()[i];
+	btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> btRigidBody<span style="color:#f92672">::</span>upcast(obj);
+	btTransform trans;
+	<span style="color:#66d9ef">if</span> (body <span style="color:#f92672">&amp;&amp;</span> body<span style="color:#f92672">-&gt;</span>getMotionState())
+	{
+		body<span style="color:#f92672">-&gt;</span>getMotionState()<span style="color:#f92672">-&gt;</span>getWorldTransform(trans);
+	}
+	<span style="color:#66d9ef">else</span>
+	{
+		trans <span style="color:#f92672">=</span> obj<span style="color:#f92672">-&gt;</span>getWorldTransform();
+	}
+	<span style="color:#75715e">//trans 就是物体的 变换矩阵
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>得到具体坐标</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">trans.getOrigin().getX();
+trans.getOrigin().getY();
+trans.getOrigin().getZ();
+</code></pre></div><blockquote>
+</blockquote>
+<h2 id="清理结果">清理结果</h2>
+<blockquote>
+</blockquote>
+<h3 id="从力学世界移除物体">从力学世界移除物体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumCollisionObjects() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
+{
+	btCollisionObject<span style="color:#f92672">*</span> obj <span style="color:#f92672">=</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getCollisionObjectArray()[i];
+	btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> btRigidBody<span style="color:#f92672">::</span>upcast(obj);
+	<span style="color:#66d9ef">if</span> (body <span style="color:#f92672">&amp;&amp;</span> body<span style="color:#f92672">-&gt;</span>getMotionState())
+	{
+		<span style="color:#66d9ef">delete</span> body<span style="color:#f92672">-&gt;</span>getMotionState();
+	}
+	dynamicsWorld<span style="color:#f92672">-&gt;</span>removeCollisionObject(obj);
+	<span style="color:#66d9ef">delete</span> obj;
+}
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="清空内存管理器管理的物体">清空内存管理器管理的物体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> collisionShapes.size(); j<span style="color:#f92672">++</span>)
+{
+	btCollisionShape<span style="color:#f92672">*</span> shape <span style="color:#f92672">=</span> collisionShapes[j];
+	collisionShapes[j] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#66d9ef">delete</span> shape;
+}
+
+collisionShapes.clear();
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="删除">删除</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//删除力学世界
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> dynamicsWorld;
+
+<span style="color:#75715e">//删除解算器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> solver;
+
+<span style="color:#75715e">//删除 broad-phase
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> overlappingPairCache;
+
+<span style="color:#75715e">//删除 调度器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> dispatcher;
+
+<span style="color:#75715e">//删除 碰撞配置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> collisionConfiguration;
+</code></pre></div>
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/bullet/">#Bullet</a>,
+            
+        
+        <time class="post-date" datetime="2021-03-23T22:59:48&#43;08:00">
+            23 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/hellohugo/">HelloHugo</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h1 id="测试">测试</h1>
+<h2 id="test">test</h2>
+<hr>
+<h4 id="无序列表">无序列表</h4>
+<ul>
+<li>1</li>
+</ul>
+<ul>
+<li>a</li>
+</ul>
+<ul>
+<li>A</li>
+</ul>
+<h4 id="有序列表">有序列表</h4>
+<ol>
+<li>1.a</li>
+<li>2.b</li>
+<li>3.c</li>
+<li>9.d 注意</li>
+</ol>
+<h4 id="区块引用">区块引用</h4>
+<blockquote>
+<p>区块引用测试</p>
+<blockquote>
+<p>再次嵌套</p>
+<blockquote>
+<p>再次再次嵌套</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<h4 id="行内式">行内式</h4>
+<p><a href="#test">测试</a>跳转到测试锚点</p>
+<h4 id="图片">图片</h4>
+<p>bing logo<img src="https://cn.bing.com/sa/simg/favicon-2x.ico" alt="测试">bing</p>
+<h4 id="删除线">删除线</h4>
+<p><del>aa</del></p>
+<h4 id="代码">代码</h4>
+<p><code>printf(&quot;Hello World!\n&quot;);</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">printf(<span style="color:#e6db74">&#34;Hello World!</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">using</span> <span style="color:#66d9ef">namespace</span> std;
+cout<span style="color:#f92672">&lt;&lt;</span><span style="color:#e6db74">&#34;Hello World!&#34;</span><span style="color:#f92672">&lt;&lt;</span>endl;
+</code></pre></div>
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
             
                 <a href="https://uuzzzga.github.io/my-blog/tags/test/">#test</a>,
             
         
-        <time class="post-date" datetime="2016-01-01T00:00:00Z">
-            1 Jan 2016
+        <time class="post-date" datetime="2021-03-23T09:19:06&#43;08:00">
+            23 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/07/mysql/"></a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <p>docker run &ndash;name mysql-test -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.5 &ndash;character-set-server=utf8mb4 &ndash;collation-server=utf8mb4_unicode_ci</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        
+        <time class="post-date" datetime="0001-01-01T00:00:00Z">
+            1 Jan 0001
         </time>
     </footer>
 </article>

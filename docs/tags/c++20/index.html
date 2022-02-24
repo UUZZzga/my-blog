@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  	<meta property="og:title" content=" c&#43;&#43;20 &middot;  My Blog" />
+  	<meta property="og:site_name" content="My Blog" />
+  	<meta property="og:url" content="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/" />
+    
+    
+    <meta property="og:type" content="website" />
+    
+
+  <title>
+     c&#43;&#43;20 &middot;  My Blog
+  </title>
+
+    <meta name="description" content="个人博客" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://uuzzzga.github.io/my-blog/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="https://uuzzzga.github.io/my-blog/images/apple-touch-icon.png" />
+    
+    <link rel="stylesheet" type="text/css" href="https://uuzzzga.github.io/my-blog/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400|Inconsolata" />
+
+
+    
+      
+          <link href="https://uuzzzga.github.io/my-blog/index.xml" rel="alternate" type="application/rss+xml" title="My Blog" />
+      
+      
+        <link href="/my-blog/tags/c&#43;&#43;20/index.xml" rel="alternate" type="application/rss+xml" title="c&#43;&#43;20 &middot; My Blog" />
+      
+    
+    <meta name="generator" content="Hugo 0.82.0" />
+
+    <link rel="canonical" href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/" />
+
+     
+</head>
+<body class="nav-closed">
+<div id="particles-js"></div>
+  
+
+
+ <div class="site-wrapper">
+
+
+
+
+	<header class="main-header" style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.jpg)">
+
+    <nav class="main-nav overlay clearfix">
+      
+        <a class="blog-logo" href="https://uuzzzga.github.io/my-blog/"><img src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Home" /></a>
+      
+      
+        
+          <a class="menu-button icon-feed" href="/my-blog/tags/c&#43;&#43;20/index.xml">&nbsp;&nbsp;Subscribe</a>
+        
+      
+    </nav>
+    <div class="vertical">
+
+        <div class="main-header-content inner">
+            <h1 class="page-title">
+
+              <a class="btn-bootstrap-2" href="#content">My Blog</a>
+          </h1>
+        </div>
+</div>
+    <a class="scroll-down icon-arrow-left" href="#content"><span class="hidden">Scroll Down</span></a>
+</header>
+
+<main id="content" class="content" role="main">
+    
+    
+    
+    
+
+	<div class="extra-pagination inner">
+    <nav class="pagination" role="navigation">
+	
+	<span class="page-number">Page 1 of 1</span>
+	
+</nav>
+
+	</div>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/09/coroutines-ts-1/">c&#43;&#43;20 coroutines-ts 1</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <p>#目标
+目标正常执行以下代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;
+  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;
+  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>);
+}
+</code></pre></div><p>为什么会出错
+##编译器遇到co_await的处理</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">	<span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">MyCoroutine</span>(args...);
+</code></pre></div><p>以上代码会被处理为</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">return_type <span style="color:#a6e22e">MyCoroutine</span>(args...)
+{
+    <span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>    promise_type promise;
+
+    coro.promise<span style="color:#f92672">=</span>promise;
+    <span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+
+    <span style="color:#66d9ef">try</span> {
+        <span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>coro.await_ready()){
+            coro.await_suspend();
+        }
+        coro.await_resume();
+    } <span style="color:#66d9ef">catch</span> (...) {
+        promise.unhandled_exception();
+    }
+    <span style="color:#66d9ef">co_await</span> promise.final_suspend();<span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>可以看到 final_suspend 这里没有被try包裹
+所以 final_suspend 返回的 类/结构体 所有方法必须是 noexcept 的
+如std::suspend_never</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">struct</span> <span style="color:#a6e22e">suspend_never</span> {
+    <span style="color:#a6e22e">[[nodiscard]]</span> <span style="color:#66d9ef">constexpr</span> <span style="color:#66d9ef">bool</span> await_ready() <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> {
+        <span style="color:#66d9ef">return</span> true;
+    }
+
+    <span style="color:#66d9ef">constexpr</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">await_suspend</span>(coroutine_handle<span style="color:#f92672">&lt;&gt;</span>) <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> {}
+    <span style="color:#66d9ef">constexpr</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">await_resume</span>() <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">noexcept</span> {}
+};
+</code></pre></div><p>其中的 <code>[[nodiscard]]</code> 是 C++17/c++20 加入的 属性记号
+详见 <a href="https://zh.cppreference.com/w/cpp/feature_test">https://zh.cppreference.com/w/cpp/feature_test</a></p>
+<p>对于我们的目标会被编译器处理成什么样</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(<span style="color:#ae81ff">2</span>);
+
+...
+
+task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+    <span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>    promise_type promise;
+
+    coro.promise<span style="color:#f92672">=</span>promise;
+    <span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+    <span style="color:#66d9ef">try</span> {
+        <span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+		
+		<span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>		promise_type promise;
+		coro.promise<span style="color:#f92672">=</span>promise;
+		<span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+		<span style="color:#66d9ef">try</span> {
+			<span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+			
+			<span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>			promise_type promise;
+			coro.promise<span style="color:#f92672">=</span>promise;
+			<span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+			<span style="color:#66d9ef">try</span> {
+				<span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+				
+				promise.return_value(<span style="color:#ae81ff">1</span>);<span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>			} <span style="color:#66d9ef">catch</span> (...) {
+				promise.unhandled_exception();
+			}
+			<span style="color:#66d9ef">co_await</span> promise.final_suspend();
+			<span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>			
+			
+			<span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>			promise_type promise;
+			coro.promise<span style="color:#f92672">=</span>promise;
+			<span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+			<span style="color:#66d9ef">try</span> {
+				<span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+				
+				promise.return_value(<span style="color:#ae81ff">0</span>);<span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>			} <span style="color:#66d9ef">catch</span> (...) {
+				promise.unhandled_exception();
+			}
+			<span style="color:#66d9ef">co_await</span> promise.final_suspend();
+			<span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>			<span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>			
+			<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>		
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>coro.await_ready()){
+            coro.await_suspend();
+        }
+        coro.await_resume();
+    } <span style="color:#66d9ef">catch</span> (...) {
+        promise.unhandled_exception();
+    }
+    <span style="color:#66d9ef">co_await</span> promise.final_suspend();
+    <span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>我是根据执行先后顺序来推测的
+里面有两个协程 执行了 initial_suspend 后 没有执行 coro的方法 直接执行return_value
+设置值、执行final_suspend结束了</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;<span style="color:#75715e">//这里
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">//这里
+</span><span style="color:#75715e"></span>  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>);
+}
+</code></pre></div><p>这会出现什么问题？
+如果你在await_suspend中把 handle 存到数组里，并在循环中执行，如</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#75715e">//...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">await_suspend</span>(std<span style="color:#f92672">::</span>coroutine_handle<span style="color:#f92672">&lt;&gt;</span> handle)
+{
+  <span style="color:#66d9ef">auto</span> loop <span style="color:#f92672">=</span> getEventLoopOfCurrentThread();
+  loop<span style="color:#f92672">-&gt;</span>addCoroHandle(handle);
+}
+<span style="color:#75715e">//...
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">void</span> EventLoop<span style="color:#f92672">::</span>coroHandle(){
+	<span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">auto</span> handle:reday_coro_){ <span style="color:#75715e">//注意
+</span><span style="color:#75715e"></span>		handle();<span style="color:#75715e">//等效于 handle.resume();
+</span><span style="color:#75715e"></span>	}
+	reday_coro_.clear();
+}
+</code></pre></div><p>当x为4时，猜猜执行如下代码会怎样</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;
+  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;
+  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)<span style="color:#75715e">/*位置1*/</span> <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>)<span style="color:#75715e">/*位置2*/</span>;
+}
+</code></pre></div><p>由于我们是在 await_suspend 中加入数组 但是这是在递归 会在执行完 位置1 执行位置2触发 await_suspend加入到尾部，但原来的尾部是什么？co_return,它会先返回在执行 位置2
+所以需要 设计 前后关系
+##前后关系
+在 await_suspend 建立关系 并在 final_suspend 中处理前后关系
+由于其中一段被编译器展开,在初始化时已经执行过 final_suspend 了
+然后你就会发现程序什么都没执行</p>
+<p>因为 执行顺序是
+x=4 进入位置1,
+x=3 进入位置1,
+x=2 进入位置1,
+x=1 返回1, 在初始化时就执行过 final_suspend
+x=2 进入位置2, 要完成 &lsquo;x=2 进入位置1&rsquo;
+x=0 返回0, 在初始化时就执行过 final_suspend
+x=3 进入位置2, 要完成 &lsquo;x=3 进入位置1&rsquo;
+x=1 返回1,
+x=4 进入位置2
+&hellip;</p>
+<p>当在执行 &lsquo;x=2 进入位置2&rsquo; 对应的await_suspend时，在确定前后关系之前就执行过 final_suspend &lsquo;x=1 返回1&rsquo; 了，我们的代码是建立在 所有协程先执行 await_suspend 确定前后关系，在执行 final_suspend 执行 前后关系表 对应的 coro.resume(), 但是在初始化时 执行&rsquo;x=1 返回1' 我们此时 前后关系表 没有建立、为空，
+所以什么都没执行
+##解决办法
+final_suspend 执行 前后关系表 对应的 coro.resume()时如果没找到 对应的 则存到数组里 事件循环 数组遍历 执行对应的coro.resume()</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/">#c&#43;&#43;20</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;2a/">#c&#43;&#43;2a</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/coroutines-ts/">#coroutines-ts</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-01T11:01:40&#43;08:00">
+            1 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/09/coroutines-ts-2/">c&#43;&#43;20 coroutines-ts 2</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <p>#目标
+目标 设计一个scheduler调度器 正常执行以下代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">task<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">int</span><span style="color:#f92672">&gt;</span> fibon(<span style="color:#66d9ef">int</span> x)
+{
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">0</span>;
+  }
+  <span style="color:#66d9ef">if</span> (x <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+  {
+    <span style="color:#66d9ef">co_return</span> <span style="color:#ae81ff">1</span>;
+  }
+  <span style="color:#66d9ef">co_return</span> <span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">fibon</span>(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">+</span> <span style="color:#66d9ef">co_await</span> fibon(x <span style="color:#f92672">-</span> <span style="color:#ae81ff">2</span>);
+}
+</code></pre></div><p>未完</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/">#c&#43;&#43;20</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;2a/">#c&#43;&#43;2a</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/coroutines-ts/">#coroutines-ts</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-01T11:01:40&#43;08:00">
+            1 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/09/coroutines-ts-3/">c&#43;&#43;20 coroutines-ts 3</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="异常">异常</h2>
+<p>对于以下代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">	<span style="color:#66d9ef">try</span>{
+		<span style="color:#66d9ef">co_await</span> <span style="color:#a6e22e">MyCoroutine</span>(args...);
+	}<span style="color:#66d9ef">catch</span>(XXX e){
+	
+	}
+</code></pre></div><p>会被处理为</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++">return_type <span style="color:#a6e22e">MyCoroutine</span>(args...)
+{
+    <span style="color:#75715e">//创建 coroutine coro
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//复制参数到 coroutine 结构体
+</span><span style="color:#75715e"></span>    promise_type promise;
+
+    coro.promise<span style="color:#f92672">=</span>promise;
+    <span style="color:#66d9ef">auto</span> return_object <span style="color:#f92672">=</span> promise.get_return_object();
+
+    <span style="color:#66d9ef">try</span> {
+        <span style="color:#66d9ef">co_await</span> promise.initial_suspend();
+        <span style="color:#66d9ef">if</span>(<span style="color:#f92672">!</span>coro.await_ready()){
+            coro.await_suspend();
+        }
+		<span style="color:#66d9ef">if</span>(promise.cancellation_requested())
+			<span style="color:#66d9ef">goto</span> end<span style="color:#f92672">-</span>label;
+        ret coro.await_resume();
+    } <span style="color:#66d9ef">catch</span> (...) {
+        promise.set_exception(std<span style="color:#f92672">::</span>current_exception());
+    }
+	final_suspend:
+    <span style="color:#66d9ef">co_await</span> promise.final_suspend();
+
+    <span style="color:#75715e">//析构 promise
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine 结构体里的参数
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//析构 coroutine coro
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>未完</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/">#c&#43;&#43;20</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;2a/">#c&#43;&#43;2a</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/coroutines-ts/">#coroutines-ts</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-01T11:01:40&#43;08:00">
+            1 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+
+	<nav class="pagination" role="navigation">
+	
+	<span class="page-number">Page 1 of 1</span>
+	
+</nav>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">My Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="https://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/syui/hugo-theme-air">hugo-theme-air</a> theme</section>
+        
+    </footer>
+    </div>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.fitvids.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/index.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.min.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.js"></script>  
+
+</body>
+</html>
+

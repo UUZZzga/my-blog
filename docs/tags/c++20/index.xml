@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>c&#43;&#43;20 on My Blog</title>
+    <link>https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;20/</link>
+    <description>Recent content in c&#43;&#43;20 on My Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Wed, 01 Sep 2021 11:01:40 +0800</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/tags/c++20/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>c&#43;&#43;20 coroutines-ts 1</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-1/</link>
+      <pubDate>Wed, 01 Sep 2021 11:01:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-1/</guid>
+      <description>#目标 目标正常执行以下代码
+task&amp;lt;int&amp;gt; fibon(int x) { if (x == 0) { co_return 0; } if (x == 1) { co_return 1; } co_return co_await fibon(x - 1) + co_await fibon(x - 2); } 为什么会出错 ##编译器遇到co_await的处理
+co_await MyCoroutine(args...); 以上代码会被处理为
+return_type MyCoroutine(args...) { //创建 coroutine coro  //复制参数到 coroutine 结构体  promise_type promise; coro.promise=promise; auto return_object = promise.get_return_object(); try { co_await promise.initial_suspend(); if(!coro.await_ready()){ coro.await_suspend(); } coro.await_resume(); } catch (...) { promise.unhandled_exception(); } co_await promise.</description>
+    </item>
+    
+    <item>
+      <title>c&#43;&#43;20 coroutines-ts 2</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-2/</link>
+      <pubDate>Wed, 01 Sep 2021 11:01:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-2/</guid>
+      <description>#目标 目标 设计一个scheduler调度器 正常执行以下代码
+task&amp;lt;int&amp;gt; fibon(int x) { if (x == 0) { co_return 0; } if (x == 1) { co_return 1; } co_return co_await fibon(x - 1) + co_await fibon(x - 2); } 未完</description>
+    </item>
+    
+    <item>
+      <title>c&#43;&#43;20 coroutines-ts 3</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-3/</link>
+      <pubDate>Wed, 01 Sep 2021 11:01:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-3/</guid>
+      <description>异常 对于以下代码
+try{ co_await MyCoroutine(args...); }catch(XXX e){ } 会被处理为
+return_type MyCoroutine(args...) { //创建 coroutine coro  //复制参数到 coroutine 结构体  promise_type promise; coro.promise=promise; auto return_object = promise.get_return_object(); try { co_await promise.initial_suspend(); if(!coro.await_ready()){ coro.await_suspend(); } if(promise.cancellation_requested()) goto end-label; ret coro.await_resume(); } catch (...) { promise.set_exception(std::current_exception()); } final_suspend: co_await promise.final_suspend(); //析构 promise  //析构 coroutine 结构体里的参数  //析构 coroutine coro } 未完</description>
+    </item>
+    
+  </channel>
+</rss>

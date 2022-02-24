@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  	<meta property="og:title" content=" c &middot;  My Blog" />
+  	<meta property="og:site_name" content="My Blog" />
+  	<meta property="og:url" content="https://uuzzzga.github.io/my-blog/tags/c/" />
+    
+    
+    <meta property="og:type" content="website" />
+    
+
+  <title>
+     c &middot;  My Blog
+  </title>
+
+    <meta name="description" content="个人博客" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://uuzzzga.github.io/my-blog/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="https://uuzzzga.github.io/my-blog/images/apple-touch-icon.png" />
+    
+    <link rel="stylesheet" type="text/css" href="https://uuzzzga.github.io/my-blog/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400|Inconsolata" />
+
+
+    
+      
+          <link href="https://uuzzzga.github.io/my-blog/index.xml" rel="alternate" type="application/rss+xml" title="My Blog" />
+      
+      
+        <link href="/my-blog/tags/c/index.xml" rel="alternate" type="application/rss+xml" title="c &middot; My Blog" />
+      
+    
+    <meta name="generator" content="Hugo 0.82.0" />
+
+    <link rel="canonical" href="https://uuzzzga.github.io/my-blog/tags/c/" />
+
+     
+</head>
+<body class="nav-closed">
+<div id="particles-js"></div>
+  
+
+
+ <div class="site-wrapper">
+
+
+
+
+	<header class="main-header" style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.jpg)">
+
+    <nav class="main-nav overlay clearfix">
+      
+        <a class="blog-logo" href="https://uuzzzga.github.io/my-blog/"><img src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Home" /></a>
+      
+      
+        
+          <a class="menu-button icon-feed" href="/my-blog/tags/c/index.xml">&nbsp;&nbsp;Subscribe</a>
+        
+      
+    </nav>
+    <div class="vertical">
+
+        <div class="main-header-content inner">
+            <h1 class="page-title">
+
+              <a class="btn-bootstrap-2" href="#content">My Blog</a>
+          </h1>
+        </div>
+</div>
+    <a class="scroll-down icon-arrow-left" href="#content"><span class="hidden">Scroll Down</span></a>
+</header>
+
+<main id="content" class="content" role="main">
+    
+    
+    
+    
+
+	<div class="extra-pagination inner">
+    <nav class="pagination" role="navigation">
+	
+	<span class="page-number">Page 1 of 1</span>
+	
+</nav>
+
+	</div>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/09/lua-parser-negative/">lua parser 负数小bug</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <p>bug代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> a<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775808</span>
+<span style="color:#66d9ef">local</span> b<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775807</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+
+print(a<span style="color:#f92672">==</span>b) <span style="color:#75715e">-- true</span>
+print(a) <span style="color:#75715e">-- -9.2233720368548e+18</span>
+print(b) <span style="color:#75715e">-- -9223372036854775808</span>
+</code></pre></div><p>查找官方社区
+<a href="http://lua-users.org/lists/lua-l/2020-03/msg00112.html">http://lua-users.org/lists/lua-l/2020-03/msg00112.html</a>
+<a href="http://lua-users.org/lists/lua-l/2020-03/msg00114.html">http://lua-users.org/lists/lua-l/2020-03/msg00114.html</a></p>
+<p>经阅读代码发现有写解析代码（详见 llex.c read_numeral）
+观察调用堆栈
+lparser.c subexpr</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">static</span> BinOpr <span style="color:#a6e22e">subexpr</span> (LexState <span style="color:#f92672">*</span>ls, expdesc <span style="color:#f92672">*</span>v, <span style="color:#66d9ef">int</span> limit) {
+  BinOpr op;
+  UnOpr uop;
+  enterlevel(ls);
+  uop <span style="color:#f92672">=</span> getunopr(ls<span style="color:#f92672">-&gt;</span>t.token);
+  <span style="color:#66d9ef">if</span> (uop <span style="color:#f92672">!=</span> OPR_NOUNOPR) {  <span style="color:#75715e">/* prefix (unary) operator? */</span>
+    <span style="color:#66d9ef">int</span> line <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>linenumber;
+    luaX_next(ls);  <span style="color:#75715e">/* skip operator */</span>
+    subexpr(ls, v, UNARY_PRIORITY);
+    luaK_prefix(ls<span style="color:#f92672">-&gt;</span>fs, uop, v, line);
+  }
+  <span style="color:#66d9ef">else</span> simpleexp(ls, v);
+  <span style="color:#75715e">// ...
+</span></code></pre></div><p>luaX_next 执行 llex 进行处理字符串转 整数和小数
+luaK_prefix 内处理过常量计算优化</p>
+<p>简单写了个修复
+lex.h</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> LexState {
+  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">int</span> prefixMinus;  <span style="color:#75715e">/* prefix equal minus */</span>
+} LexState;
+<span style="color:#75715e">// ...
+</span></code></pre></div><p>lparser.c</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">static</span> BinOpr <span style="color:#a6e22e">subexpr</span> (LexState <span style="color:#f92672">*</span>ls, expdesc <span style="color:#f92672">*</span>v, <span style="color:#66d9ef">int</span> limit) {
+  BinOpr op;
+  UnOpr uop;
+  enterlevel(ls);
+  uop <span style="color:#f92672">=</span> getunopr(ls<span style="color:#f92672">-&gt;</span>t.token);
+  <span style="color:#66d9ef">if</span>(uop <span style="color:#f92672">==</span> OPR_MINUS){ <span style="color:#75715e">/* 一元运算符 符号为 - */</span>
+    <span style="color:#75715e">// 修改部分
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> line <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>linenumber;
+    ls<span style="color:#f92672">-&gt;</span>prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;<span style="color:#75715e">// 为负数
+</span><span style="color:#75715e"></span>    luaX_next(ls);
+    isPrefix <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>prefixMinus;<span style="color:#75715e">//a=-(-1)
+</span><span style="color:#75715e"></span>							   <span style="color:#75715e">//   ^
+</span><span style="color:#75715e"></span>    subexpr(ls, v, UNARY_PRIORITY);
+	<span style="color:#75715e">// 不执行 luaK_prefix(ls-&gt;fs, uop, v, line);
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 不能使用 a=-(-1)
+</span><span style="color:#75715e"></span>	
+	<span style="color:#66d9ef">if</span>(isPrefix){
+      luaK_prefix(ls<span style="color:#f92672">-&gt;</span>fs, uop, v, line);
+      ls<span style="color:#f92672">-&gt;</span>prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+    }
+  }
+  <span style="color:#66d9ef">else</span> <span style="color:#66d9ef">if</span> (uop <span style="color:#f92672">!=</span> OPR_NOUNOPR) {  <span style="color:#75715e">/* prefix (unary) operator? */</span>
+    <span style="color:#66d9ef">int</span> line <span style="color:#f92672">=</span> ls<span style="color:#f92672">-&gt;</span>linenumber;
+    luaX_next(ls);  <span style="color:#75715e">/* skip operator */</span>
+    subexpr(ls, v, UNARY_PRIORITY);
+    luaK_prefix(ls<span style="color:#f92672">-&gt;</span>fs, uop, v, line);
+  }
+  <span style="color:#66d9ef">else</span> simpleexp(ls, v);
+  <span style="color:#75715e">// ...
+</span></code></pre></div><p>lex.c</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">llex</span> (LexState <span style="color:#f92672">*</span>ls, SemInfo <span style="color:#f92672">*</span>seminfo) {
+      <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;0&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;1&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;2&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;3&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;4&#39;</span><span style="color:#f92672">:</span>
+      <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;5&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;6&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;7&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;8&#39;</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">case</span> <span style="color:#e6db74">&#39;9&#39;</span><span style="color:#f92672">:</span> {
+	    <span style="color:#75715e">// 修改部分
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span>(ls<span style="color:#f92672">-&gt;</span>prefixMinus){
+          save(ls, <span style="color:#e6db74">&#39;-&#39;</span>);<span style="color:#75715e">// 向buffer写入 &#39;-&#39;
+</span><span style="color:#75715e"></span>		  ls<span style="color:#f92672">-&gt;</span>prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+        }
+        <span style="color:#66d9ef">return</span> read_numeral(ls, seminfo);<span style="color:#75715e">//能处理 负数情况
+</span><span style="color:#75715e"></span>      }
+	  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>lparser.c</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c">LClosure <span style="color:#f92672">*</span><span style="color:#a6e22e">luaY_parser</span> (lua_State <span style="color:#f92672">*</span>L, ZIO <span style="color:#f92672">*</span>z, Mbuffer <span style="color:#f92672">*</span>buff,
+                       Dyndata <span style="color:#f92672">*</span>dyd, <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>name, <span style="color:#66d9ef">int</span> firstchar) {
+  LexState lexstate;
+  FuncState funcstate;
+  LClosure <span style="color:#f92672">*</span>cl <span style="color:#f92672">=</span> luaF_newLclosure(L, <span style="color:#ae81ff">1</span>);  <span style="color:#75715e">/* create main closure */</span>
+  setclLvalue2s(L, L<span style="color:#f92672">-&gt;</span>top, cl);  <span style="color:#75715e">/* anchor it (to avoid being collected) */</span>
+  luaD_inctop(L);
+  lexstate.prefixMinus <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;<span style="color:#75715e">//初始化
+</span><span style="color:#75715e"></span>  <span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>编译测试</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> a<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775808</span>
+<span style="color:#66d9ef">local</span> b<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775807</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+<span style="color:#75715e">-- 试一下修改会不会影响小数</span>
+<span style="color:#66d9ef">local</span> c<span style="color:#f92672">=-</span><span style="color:#ae81ff">1.2345678</span>
+c<span style="color:#f92672">=</span>c<span style="color:#f92672">-</span><span style="color:#ae81ff">99</span>
+
+<span style="color:#66d9ef">local</span> d<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span><span style="color:#f92672">-</span>a
+<span style="color:#66d9ef">local</span> e<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span> <span style="color:#f92672">+</span> a
+
+print(a<span style="color:#f92672">==</span>b) <span style="color:#75715e">-- true</span>
+print(a) <span style="color:#75715e">-- -9223372036854775808</span>
+print(b) <span style="color:#75715e">-- -9223372036854775808</span>
+print(c) <span style="color:#75715e">-- -100.2345678</span>
+print(d) <span style="color:#75715e">-- -9223372036854775807</span>
+<span style="color:#75715e">-- 原因</span>
+<span style="color:#75715e">-- -9223372036854775808 * (-1) = -9223372036854775808</span>
+<span style="color:#75715e">-- 64为整数最大表示范围 9223372036854775807 刚好溢出 1</span>
+<span style="color:#75715e">-- 1 - (-9223372036854775808) = 1 + (-9223372036854775808)</span>
+<span style="color:#75715e">-- -9223372036854775808 = 0x8000000000000000</span>
+<span style="color:#75715e">-- 1 + 0x8000000000000000 = 0x8000000000000001 = -9223372036854775807</span>
+print(e<span style="color:#f92672">==</span>a) <span style="color:#75715e">-- true</span>
+print(e<span style="color:#f92672">==</span>b) <span style="color:#75715e">-- true</span>
+print(e) <span style="color:#75715e">-- -9.2233720368548e+18</span>
+</code></pre></div><p>再换一段代码测试 优化是否能正常工作</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> a<span style="color:#f92672">=-</span><span style="color:#ae81ff">9223372036854775808</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">9223372036854775807</span>
+print(a)
+</code></pre></div><p>查看指令</p>
+<pre><code>0+ params, 3 slots, 1 upvalue, 1 local, 1 constant, 0 functions
+        1       [1]     VARARGPREP      0
+        2       [17]    LOADI           0 -1
+        3       [18]    GETTABUP        1 0 0   ; _ENV &quot;print&quot;
+        4       [18]    MOVE            2 0
+        5       [18]    CALL            1 2 1   ; 1 in 0 out
+        6       [18]    RETURN          1 1 1   ; 0 out
+</code></pre><p>看结果没问题 用一段时间试试</p>
+<p>补充一下代码测速</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> integerMin <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854775808</span>
+<span style="color:#75715e">-- local integerMin = -9223372036854775807 - 1</span>
+
+<span style="color:#66d9ef">local</span> io <span style="color:#f92672">=</span> require <span style="color:#e6db74">&#34;io&#34;</span>
+
+<span style="color:#66d9ef">local</span> fp <span style="color:#f92672">=</span> io.open(<span style="color:#e6db74">&#34;tmp.lua&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>)
+fp:write(<span style="color:#e6db74">&#34;local tmp = {&#34;</span>)
+fp:write(integerMin)
+
+<span style="color:#66d9ef">for</span> index <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854775807</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854000000</span> <span style="color:#66d9ef">do</span>
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>)
+    fp:write(index)
+<span style="color:#66d9ef">end</span>
+fp:write(<span style="color:#e6db74">&#34;}</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+fp:write(<span style="color:#e6db74">&#34;return tmp&#34;</span>)
+fp:close()
+
+start_time <span style="color:#f92672">=</span> os.clock()
+<span style="color:#66d9ef">local</span> tmp <span style="color:#f92672">=</span> require <span style="color:#e6db74">&#34;tmp&#34;</span>
+end_time <span style="color:#f92672">=</span> os.clock()
+print(<span style="color:#f92672">#</span>tmp)
+print(end_time <span style="color:#f92672">-</span> start_time)
+</code></pre></div><p>没有修改的输出</p>
+<pre><code>775809
+0.197
+</code></pre><p>修改过的输出</p>
+<pre><code>775809
+0.177
+</code></pre><p>我修改过的竟然还要快？
+分析原因</p>
+<ol>
+<li>struct LexState 的结构我也顺便优化了一下把指针放结构体到前面，这样改</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">struct</span> LexState {
+  <span style="color:#66d9ef">struct</span> FuncState <span style="color:#f92672">*</span>fs;  <span style="color:#75715e">/* current function (parser) */</span>
+  <span style="color:#66d9ef">struct</span> lua_State <span style="color:#f92672">*</span>L;
+  ZIO <span style="color:#f92672">*</span>z;  <span style="color:#75715e">/* input stream */</span>
+  Mbuffer <span style="color:#f92672">*</span>buff;  <span style="color:#75715e">/* buffer for tokens */</span>
+  Table <span style="color:#f92672">*</span>h;  <span style="color:#75715e">/* to avoid collection/reuse strings */</span>
+  <span style="color:#66d9ef">struct</span> Dyndata <span style="color:#f92672">*</span>dyd;  <span style="color:#75715e">/* dynamic structures used by the parser */</span>
+  TString <span style="color:#f92672">*</span>source;  <span style="color:#75715e">/* current source name */</span>
+  TString <span style="color:#f92672">*</span>envn;  <span style="color:#75715e">/* environment variable name */</span>
+  Token t;  <span style="color:#75715e">/* current token */</span>
+  Token lookahead;  <span style="color:#75715e">/* look ahead token */</span>
+  <span style="color:#66d9ef">int</span> current;  <span style="color:#75715e">/* current character (charint) */</span>
+  <span style="color:#66d9ef">int</span> linenumber;  <span style="color:#75715e">/* input line counter */</span>
+  <span style="color:#66d9ef">int</span> lastline;  <span style="color:#75715e">/* line of last token &#39;consumed&#39; */</span>
+  <span style="color:#66d9ef">int</span> prefixMinus;  <span style="color:#75715e">/* prefix equal minus */</span>
+} LexState;
+</code></pre></div><p>注意代码只改过先后顺序,编译运行</p>
+<pre><code>775809
+0.187
+</code></pre><p>还有0.01的差距
+2. 测试集问题
+我的测试集是选用负数来测
+修改的代码部分负数部分没有执行 luaK_prefix -&gt; constfolding 这样的优化
+换个正负数差不多的测试集试试</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#75715e">-- ...</span>
+<span style="color:#66d9ef">for</span> index <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854775807</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">9223372036854000000</span> <span style="color:#66d9ef">do</span>
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>)
+    fp:write(index)
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>) 			<span style="color:#75715e">-- +++++++</span>
+    fp:write(index <span style="color:#f92672">*</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)	<span style="color:#75715e">-- +++++++</span>
+<span style="color:#66d9ef">end</span>
+<span style="color:#75715e">-- ...</span>
+</code></pre></div><p>我修改的代码速度</p>
+<pre><code>1551617
+0.356
+</code></pre><p>官方代码优化内存布局</p>
+<pre><code>1551617
+0.37
+</code></pre><p>还是能快0.01秒</p>
+<p>那都是正数情况呢</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lua" data-lang="lua"><span style="color:#66d9ef">local</span> begin <span style="color:#f92672">=</span> <span style="color:#ae81ff">9223372036854000000</span>
+
+<span style="color:#66d9ef">local</span> io <span style="color:#f92672">=</span> require <span style="color:#e6db74">&#34;io&#34;</span>
+
+<span style="color:#66d9ef">local</span> fp <span style="color:#f92672">=</span> io.open(<span style="color:#e6db74">&#34;tmp.lua&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>)
+fp:write(<span style="color:#e6db74">&#34;local tmp = {&#34;</span>)
+fp:write(begin)
+
+<span style="color:#66d9ef">for</span> index <span style="color:#f92672">=</span> begin<span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">9223372036854775807</span> <span style="color:#66d9ef">do</span>
+    fp:write(<span style="color:#e6db74">&#34;,&#34;</span>)
+    fp:write(index)
+<span style="color:#66d9ef">end</span>
+<span style="color:#75715e">-- ...</span>
+</code></pre></div><p>我修改过的</p>
+<pre><code>775808
+0.169
+</code></pre><p>官方代码优化内存布局</p>
+<pre><code>775808
+0.169
+</code></pre><p>得出结论
+修改内存布局就可以提高 5%
+在此基础上
+在只负数时 我修改的快约 6%
+在正负数各占一半 我修改的快约 4%
+在只有正数时 性能几乎一样</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c/">#c</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/lua/">#lua</a>,
+            
+        
+        <time class="post-date" datetime="2021-09-19T11:48:40&#43;08:00">
+            19 Sep 2021
+        </time>
+    </footer>
+</article>
+
+	
+
+	<nav class="pagination" role="navigation">
+	
+	<span class="page-number">Page 1 of 1</span>
+	
+</nav>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">My Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="https://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/syui/hugo-theme-air">hugo-theme-air</a> theme</section>
+        
+    </footer>
+    </div>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.fitvids.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/index.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.min.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.js"></script>  
+
+</body>
+</html>
+

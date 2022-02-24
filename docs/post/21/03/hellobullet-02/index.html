@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  	<meta property="og:title" content=" HelloBullet 02 &middot;  My Blog" />
+  	<meta property="og:site_name" content="My Blog" />
+  	<meta property="og:url" content="https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-02/" />
+    
+    
+  	<meta property="og:type" content="article" />
+
+    <meta property="og:article:published_time" content="2021-03-25T16:49:26&#43;08:00" />
+
+    
+    <meta property="og:article:tag" content="c&#43;&#43;" />
+    
+    <meta property="og:article:tag" content="Bullet" />
+    
+    
+
+  <title>
+     HelloBullet 02 &middot;  My Blog
+  </title>
+
+    <meta name="description" content="个人博客" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://uuzzzga.github.io/my-blog/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="https://uuzzzga.github.io/my-blog/images/apple-touch-icon.png" />
+    
+    <link rel="stylesheet" type="text/css" href="https://uuzzzga.github.io/my-blog/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400|Inconsolata" />
+
+
+    
+      
+          <link href="https://uuzzzga.github.io/my-blog/index.xml" rel="alternate" type="application/rss+xml" title="My Blog" />
+      
+      
+    
+    <meta name="generator" content="Hugo 0.82.0" />
+
+    <link rel="canonical" href="https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-02/" />
+
+     
+</head>
+<body class="nav-closed">
+<div id="particles-js"></div>
+  
+
+
+ <div class="site-wrapper">
+
+
+
+<header class="main-header " style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.jpg)">
+
+    <nav class="main-nav overlay clearfix">
+        
+            <a class="blog-logo" href="https://uuzzzga.github.io/my-blog/"><img src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Blog Logo" /></a>
+        
+        
+    </nav>
+<div class="vertical">
+        <div class="main-header-content inner">
+            <h1 class="page-title">
+              <a class="btn-bootstrap-2" href="#content">My Blog</a>
+          </h1>
+          <h2 class="page-description">个人博客</h2>
+        </div>
+</div>
+    <a class="scroll-down icon-arrow-left" href="#content"><span class="hidden">Scroll Down</span></a>
+</header>
+
+  <main id="content" class="content" role="main">
+
+
+  <article class="post post">
+
+    <header class="post-header">
+        <h1 class="post-title">HelloBullet 02</h1>
+        <section class="post-meta">
+        
+	<time class="post-date" datetime="2021-03-25">
+            2021-03-25
+          </time>
+        
+         
+          <span class="post-tag small"><a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a></span>
+         
+          <span class="post-tag small"><a href="https://uuzzzga.github.io/my-blog/tags/bullet/">#Bullet</a></span>
+         
+        </section>
+    </header>
+
+    <section class="post-content">
+      <h2 id="物理计算-类的关系">物理计算 类的关系</h2>
+<blockquote>
+</blockquote>
+<h3 id="抽象类-commonexampleinterface">抽象类 CommonExampleInterface</h3>
+<blockquote>
+</blockquote>
+<h4 id="初始化-和-结束">初始化 和 结束</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">initPhysics</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">exitPhysics</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="计算物理">计算物理</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">stepSimulation</span>(<span style="color:#66d9ef">float</span> deltaTime) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="图像gui相关">图像GUI相关</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">updateGraphics</span>() {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">renderScene</span>() <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<p>窗口回执</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseMoveCallback</span>(<span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseButtonCallback</span>(<span style="color:#66d9ef">int</span> button, <span style="color:#66d9ef">int</span> state, <span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">keyboardCallback</span>(<span style="color:#66d9ef">int</span> key, <span style="color:#66d9ef">int</span> state) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="debug相关">debug相关</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">physicsDebugDraw</span>(<span style="color:#66d9ef">int</span> debugFlags) <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;  <span style="color:#75715e">//目前，我们在 Bullet/src/LinearMath/btIDebugDraw.h
+</span><span style="color:#75715e">//只有在切换演示时才调用 resetCamera。这样你可以重新启动（initPhysics）并更容易地在特定的位置观看
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">resetCamera</span>(){};
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="vr相关">vr相关</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrControllerMoveCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> analogAxis, <span style="color:#66d9ef">float</span> auxAnalogAxes[<span style="color:#ae81ff">10</span>]) {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrControllerButtonCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">int</span> button, <span style="color:#66d9ef">int</span> state, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>]) {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrHMDMoveCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>]) {}
+<span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">vrGenericTrackerMoveCallback</span>(<span style="color:#66d9ef">int</span> controllerId, <span style="color:#66d9ef">float</span> pos[<span style="color:#ae81ff">4</span>], <span style="color:#66d9ef">float</span> orientation[<span style="color:#ae81ff">4</span>]) {}
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="处理命令行参数">处理命令行参数</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">processCommandLineArgs</span>(<span style="color:#66d9ef">int</span> argc, <span style="color:#66d9ef">char</span><span style="color:#f92672">*</span> argv[]){};
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="自定义-类的接口">自定义 类的接口</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">typedef</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">CommonExampleInterface</span><span style="color:#f92672">*</span>(CreateFunc)(CommonExampleOptions<span style="color:#f92672">&amp;</span> options);
+</code></pre></div><p>满足这个类型即可</p>
+<blockquote>
+</blockquote>
+<h3 id="commonrigidbodybase-共有基类">CommonRigidBodyBase 共有基类</h3>
+<blockquote>
+</blockquote>
+<h4 id="属性">属性</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//使用内存管理工具 管理 btCollisionShape指针 物体的物理形状
+</span><span style="color:#75715e"></span>btAlignedObjectArray<span style="color:#f92672">&lt;</span>btCollisionShape<span style="color:#f92672">*&gt;</span> m_collisionShapes;
+
+<span style="color:#75715e">//Broad-Phase
+</span><span style="color:#75715e"></span>btBroadphaseInterface<span style="color:#f92672">*</span> m_broadphase;
+
+<span style="color:#75715e">//碰撞调度器
+</span><span style="color:#75715e"></span>btCollisionDispatcher<span style="color:#f92672">*</span> m_dispatcher;
+
+<span style="color:#75715e">//约束解算器
+</span><span style="color:#75715e"></span>btConstraintSolver<span style="color:#f92672">*</span> m_solver;
+
+<span style="color:#75715e">//碰撞配置
+</span><span style="color:#75715e"></span>btDefaultCollisionConfiguration<span style="color:#f92672">*</span> m_collisionConfiguration;
+
+<span style="color:#75715e">//力学世界
+</span><span style="color:#75715e"></span>btDiscreteDynamicsWorld<span style="color:#f92672">*</span> m_dynamicsWorld;
+</code></pre></div><blockquote>
+</blockquote>
+<h4 id="观察视角相关">观察视角相关</h4>
+<h5 id="属性-1">属性</h5>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//data for picking objects
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">btRigidBody</span><span style="color:#f92672">*</span> m_pickedBody;
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">btTypedConstraint</span><span style="color:#f92672">*</span> m_pickedConstraint;
+<span style="color:#66d9ef">int</span> m_savedState;
+btVector3 m_oldPickingPos;
+btVector3 m_hitPos;
+btScalar m_oldPickingDist;
+</code></pre></div><h5 id="方法">方法</h5>
+<ol>
+<li>mouseMoveCallback 鼠标移动回执</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseMoveCallback</span>(<span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y)
+{
+	CommonRenderInterface<span style="color:#f92672">*</span> renderer <span style="color:#f92672">=</span> m_guiHelper<span style="color:#f92672">-&gt;</span>getRenderInterface();
+
+	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>renderer)
+		{
+		btAssert(<span style="color:#ae81ff">0</span>);
+		<span style="color:#66d9ef">return</span> false;
+	}
+
+	btVector3 rayTo <span style="color:#f92672">=</span> getRayTo(<span style="color:#66d9ef">int</span>(x), <span style="color:#66d9ef">int</span>(y));
+	btVector3 rayFrom;
+	renderer<span style="color:#f92672">-&gt;</span>getActiveCamera()<span style="color:#f92672">-&gt;</span>getCameraPosition(rayFrom);
+	movePickedBody(rayFrom, rayTo);
+
+	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>执行getRayTo 把屏幕坐标转换成世界坐标也就是移动的目标点，通过gui的输入工具,获取相机内的物体的坐标也就是原来的坐标 执行 movePickedBody(rayFrom, rayTo); 移动物体
+2. movePickedBody</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">movePickedBody</span>(<span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayFromWorld, <span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayToWorld)
+{
+	<span style="color:#66d9ef">if</span> (m_pickedBody <span style="color:#f92672">&amp;&amp;</span> m_pickedConstraint)
+	{
+		btPoint2PointConstraint<span style="color:#f92672">*</span> pickCon <span style="color:#f92672">=</span> <span style="color:#66d9ef">static_cast</span><span style="color:#f92672">&lt;</span>btPoint2PointConstraint<span style="color:#f92672">*&gt;</span>(m_pickedConstraint);
+		<span style="color:#66d9ef">if</span> (pickCon)
+		{
+			<span style="color:#75715e">//keep it at the same picking distance
+</span><span style="color:#75715e"></span>
+			btVector3 newPivotB;
+
+			btVector3 dir <span style="color:#f92672">=</span> rayToWorld <span style="color:#f92672">-</span> rayFromWorld;
+			dir.normalize();
+			dir <span style="color:#f92672">*=</span> m_oldPickingDist;
+
+			newPivotB <span style="color:#f92672">=</span> rayFromWorld <span style="color:#f92672">+</span> dir;
+			pickCon<span style="color:#f92672">-&gt;</span>setPivotB(newPivotB);
+			<span style="color:#66d9ef">return</span> true;
+		}
+	}
+	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>如果选择物体 移动选择物体。rayFromWorld原来的坐标，rayToWorld目标坐标，dir移动的方向，normalize坐标和原点的线段方向不变长度为1，m_oldPickingDist 为移动距离的长度，setPivotB设置关节在第2个刚体坐标系中的位置
+3. mouseButtonCallback 鼠标点击回执</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">mouseButtonCallback</span>(<span style="color:#66d9ef">int</span> button, <span style="color:#66d9ef">int</span> state, <span style="color:#66d9ef">float</span> x, <span style="color:#66d9ef">float</span> y)
+{
+	CommonRenderInterface<span style="color:#f92672">*</span> renderer <span style="color:#f92672">=</span> m_guiHelper<span style="color:#f92672">-&gt;</span>getRenderInterface();
+
+	<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>renderer)
+	{
+		btAssert(<span style="color:#ae81ff">0</span>);
+		<span style="color:#66d9ef">return</span> false;
+	}
+
+	CommonWindowInterface<span style="color:#f92672">*</span> window <span style="color:#f92672">=</span> m_guiHelper<span style="color:#f92672">-&gt;</span>getAppInterface()<span style="color:#f92672">-&gt;</span>m_window;
+
+<span style="color:#75715e">// ...
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">if</span> (state <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span>)
+	{
+		<span style="color:#66d9ef">if</span> (button <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">&amp;&amp;</span> (<span style="color:#f92672">!</span>window<span style="color:#f92672">-&gt;</span>isModifierKeyPressed(B3G_ALT) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>window<span style="color:#f92672">-&gt;</span>isModifierKeyPressed(B3G_CONTROL)))
+		{
+			btVector3 camPos;
+			renderer<span style="color:#f92672">-&gt;</span>getActiveCamera()<span style="color:#f92672">-&gt;</span>getCameraPosition(camPos);
+
+			btVector3 rayFrom <span style="color:#f92672">=</span> camPos;
+			btVector3 rayTo <span style="color:#f92672">=</span> getRayTo(<span style="color:#66d9ef">int</span>(x), <span style="color:#66d9ef">int</span>(y));
+
+			pickBody(rayFrom, rayTo);
+		}
+	}
+	<span style="color:#66d9ef">else</span>
+	{
+		<span style="color:#66d9ef">if</span> (button <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+		{
+			removePickingConstraint();
+			<span style="color:#75715e">//remove p2p
+</span><span style="color:#75715e"></span>		}
+	}
+
+	<span style="color:#75715e">//printf(&#34;button=%d, state=%d\n&#34;,button,state);
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>button 按钮，state状态。按下左键时，获取相机指向的坐标，窗口坐标转换成世界坐标，执行pickBody
+4. pickBody</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">bool</span> <span style="color:#a6e22e">pickBody</span>(<span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayFromWorld, <span style="color:#66d9ef">const</span> btVector3<span style="color:#f92672">&amp;</span> rayToWorld)
+{
+	<span style="color:#66d9ef">if</span> (m_dynamicsWorld <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>)
+		<span style="color:#66d9ef">return</span> false;
+
+	btCollisionWorld<span style="color:#f92672">::</span>ClosestRayResultCallback rayCallback(rayFromWorld, rayToWorld);
+
+	rayCallback.m_flags <span style="color:#f92672">|=</span> btTriangleRaycastCallback<span style="color:#f92672">::</span>kF_UseGjkConvexCastRaytest;
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>rayTest(rayFromWorld, rayToWorld, rayCallback);
+	<span style="color:#66d9ef">if</span> (rayCallback.hasHit())
+	{
+		btVector3 pickPos <span style="color:#f92672">=</span> rayCallback.m_hitPointWorld;
+		btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> (btRigidBody<span style="color:#f92672">*</span>)btRigidBody<span style="color:#f92672">::</span>upcast(rayCallback.m_collisionObject);
+		<span style="color:#66d9ef">if</span> (body)
+		{
+			<span style="color:#75715e">//other exclusions?
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>(body<span style="color:#f92672">-&gt;</span>isStaticObject() <span style="color:#f92672">||</span> body<span style="color:#f92672">-&gt;</span>isKinematicObject()))
+			{
+				m_pickedBody <span style="color:#f92672">=</span> body;
+				m_savedState <span style="color:#f92672">=</span> m_pickedBody<span style="color:#f92672">-&gt;</span>getActivationState();
+				m_pickedBody<span style="color:#f92672">-&gt;</span>setActivationState(DISABLE_DEACTIVATION);
+				<span style="color:#75715e">//printf(&#34;pickPos=%f,%f,%f\n&#34;,pickPos.getX(),pickPos.getY(),pickPos.getZ());
+</span><span style="color:#75715e"></span>				btVector3 localPivot <span style="color:#f92672">=</span> body<span style="color:#f92672">-&gt;</span>getCenterOfMassTransform().inverse() <span style="color:#f92672">*</span> pickPos;
+				btPoint2PointConstraint<span style="color:#f92672">*</span> p2p <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btPoint2PointConstraint(<span style="color:#f92672">*</span>body, localPivot);
+				m_dynamicsWorld<span style="color:#f92672">-&gt;</span>addConstraint(p2p, true);
+				m_pickedConstraint <span style="color:#f92672">=</span> p2p;
+				btScalar mousePickClamping <span style="color:#f92672">=</span> <span style="color:#ae81ff">30.f</span>;
+				p2p<span style="color:#f92672">-&gt;</span>m_setting.m_impulseClamp <span style="color:#f92672">=</span> mousePickClamping;
+				<span style="color:#75715e">//very weak constraint for picking
+</span><span style="color:#75715e"></span>				p2p<span style="color:#f92672">-&gt;</span>m_setting.m_tau <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.001f</span>;
+			}
+		}
+
+		m_oldPickingPos <span style="color:#f92672">=</span> rayToWorld;
+		m_hitPos <span style="color:#f92672">=</span> pickPos;
+		m_oldPickingDist <span style="color:#f92672">=</span> (pickPos <span style="color:#f92672">-</span> rayFromWorld).length();
+	}
+	<span style="color:#66d9ef">return</span> false;
+}
+</code></pre></div><p>ClosestRayResultCallback 用于获取鼠标指向最近物体的工具，设置flag 使用 凸面射线 gjk算法，
+<code>m_dynamicsWorld-&gt;rayTest(rayFromWorld, rayToWorld, rayCallback);</code>
+使用rayTest尝试获取 最近物体的工具，rayCallback.hasHit() 判断是否存在，
+<code>btVector3 pickPos = rayCallback.m_hitPointWorld;</code>
+获取选中 相对于物体原点的位置，
+<code>btRigidBody* body = (btRigidBody*)btRigidBody::upcast(rayCallback.m_collisionObject);</code>
+尝试将父类btCollisionObject 转换成子类btRigidBody upcast内部是用状态机和c风格转换实现的，
+转换成功后 排除 静态物体（没有质量）和 KinematicObject （其实他有isStaticOrKinematicObject方法），
+设置选中物体，保存物体原来状态，更改物体状态为 DISABLE_DEACTIVATION 失去活动 ，获取重心的变换矩阵 的反向 乘 pickPos 矩阵 点乘 向量，
+添加一个 点到点的约束 给 世界里的 被选中物体，设置夹住的效果 给约束 力量为 30，给选中物体非常弱的约束</p>
+<blockquote>
+</blockquote>
+<ol start="5">
+<li>removePickingConstraint</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">removePickingConstraint</span>()
+{
+	<span style="color:#66d9ef">if</span> (m_pickedConstraint)
+	{
+		m_pickedBody<span style="color:#f92672">-&gt;</span>forceActivationState(m_savedState);
+		m_pickedBody<span style="color:#f92672">-&gt;</span>activate();
+		m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeConstraint(m_pickedConstraint);
+		<span style="color:#66d9ef">delete</span> m_pickedConstraint;
+		m_pickedConstraint <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+		m_pickedBody <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	}
+}
+</code></pre></div><p>如果夹住的约束存在，恢复物体状态，激活，移除约束，释放 约束占用的内存，清空夹住的物体指针</p>
+<h4 id="物理引擎相关">物理引擎相关</h4>
+<blockquote>
+</blockquote>
+<h5 id="方法-1">方法</h5>
+<ol>
+<li>createEmptyDynamicsWorld</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">///collision configuration contains default setup for memory, collision setup
+</span><span style="color:#75715e"></span>m_collisionConfiguration <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultCollisionConfiguration();
+<span style="color:#75715e">//m_collisionConfiguration-&gt;setConvexConvexMultipointIterations();
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+</span><span style="color:#75715e"></span>m_dispatcher <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btCollisionDispatcher(m_collisionConfiguration);
+
+m_broadphase <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDbvtBroadphase();
+
+<span style="color:#75715e">///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+</span><span style="color:#75715e"></span>btSequentialImpulseConstraintSolver<span style="color:#f92672">*</span> sol <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btSequentialImpulseConstraintSolver;
+m_solver <span style="color:#f92672">=</span> sol;
+
+m_dynamicsWorld <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver, m_collisionConfiguration);
+
+m_dynamicsWorld<span style="color:#f92672">-&gt;</span>setGravity(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">0</span>));
+</code></pre></div><p>默认 碰撞配置
+默认 碰撞调度器
+通用的Broad-Phase
+默认 约束求解器
+创建一个力学世界
+设置重力方向
+2. createBoxShape</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btBoxShape<span style="color:#f92672">*</span> box <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btBoxShape(halfExtents);
+<span style="color:#66d9ef">return</span> box;
+</code></pre></div><ol start="3">
+<li>createRigidBody</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btRigidBody<span style="color:#f92672">*</span> <span style="color:#a6e22e">createRigidBody</span>(<span style="color:#66d9ef">float</span> mass, <span style="color:#66d9ef">const</span> btTransform<span style="color:#f92672">&amp;</span> startTransform, btCollisionShape<span style="color:#f92672">*</span> shape, <span style="color:#66d9ef">const</span> btVector4<span style="color:#f92672">&amp;</span> color <span style="color:#f92672">=</span> btVector4(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>))
+{
+	btAssert((<span style="color:#f92672">!</span>shape <span style="color:#f92672">||</span> shape<span style="color:#f92672">-&gt;</span>getShapeType() <span style="color:#f92672">!=</span> INVALID_SHAPE_PROXYTYPE));
+
+	<span style="color:#75715e">//rigidbody is dynamic if and only if mass is non zero, otherwise static
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">bool</span> isDynamic <span style="color:#f92672">=</span> (mass <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0.f</span>);
+
+	btVector3 localInertia(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+	<span style="color:#66d9ef">if</span> (isDynamic)
+		shape<span style="color:#f92672">-&gt;</span>calculateLocalInertia(mass, localInertia);
+
+	<span style="color:#75715e">//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes &#39;active&#39; objects
+</span><span style="color:#75715e"></span>
+	btDefaultMotionState<span style="color:#f92672">*</span> myMotionState <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultMotionState(startTransform);
+
+	btRigidBody<span style="color:#f92672">::</span>btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
+
+	btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btRigidBody(cInfo);
+	<span style="color:#75715e">//body-&gt;setContactProcessingThreshold(m_dfaultContactProcessingThre
+</span><span style="color:#75715e"></span>
+	body<span style="color:#f92672">-&gt;</span>setUserIndex(<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>);
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>addRigidBody(body);
+	<span style="color:#66d9ef">return</span> body;
+}
+</code></pre></div><ol start="4">
+<li>deleteRigidBody</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">deleteRigidBody</span>(btRigidBody<span style="color:#f92672">*</span> body)
+{
+	<span style="color:#66d9ef">int</span> graphicsUid <span style="color:#f92672">=</span> body<span style="color:#f92672">-&gt;</span>getUserIndex();
+	m_guiHelper<span style="color:#f92672">-&gt;</span>removeGraphicsInstance(graphicsUid);
+
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeRigidBody(body);
+	btMotionState<span style="color:#f92672">*</span> ms <span style="color:#f92672">=</span> body<span style="color:#f92672">-&gt;</span>getMotionState();
+	<span style="color:#66d9ef">delete</span> body;
+	<span style="color:#66d9ef">delete</span> ms;
+}
+</code></pre></div><ol start="5">
+<li>exitPhysics</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">exitPhysics</span>()
+{
+	removePickingConstraint();
+	<span style="color:#75715e">//cleanup in the reverse order of creation/initialization
+</span><span style="color:#75715e"></span>
+	<span style="color:#75715e">//remove the rigidbodies from the dynamics world and delete them
+</span><span style="color:#75715e"></span>
+	<span style="color:#66d9ef">if</span> (m_dynamicsWorld)
+	{
+		<span style="color:#66d9ef">int</span> i;
+		<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumConstraints() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
+		{
+			m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeConstraint(m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getConstraint(i));
+		}
+		<span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumCollisionObjects() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
+		{
+			btCollisionObject<span style="color:#f92672">*</span> obj <span style="color:#f92672">=</span> m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getCollisionObjectArray()[i];
+			btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> btRigidBody<span style="color:#f92672">::</span>upcast(obj);
+			<span style="color:#66d9ef">if</span> (body <span style="color:#f92672">&amp;&amp;</span> body<span style="color:#f92672">-&gt;</span>getMotionState())
+			{
+				<span style="color:#66d9ef">delete</span> body<span style="color:#f92672">-&gt;</span>getMotionState();
+			}
+			m_dynamicsWorld<span style="color:#f92672">-&gt;</span>removeCollisionObject(obj);
+			<span style="color:#66d9ef">delete</span> obj;
+		}
+	}
+	<span style="color:#75715e">//delete collision shapes
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> m_collisionShapes.size(); j<span style="color:#f92672">++</span>)
+	{
+		btCollisionShape<span style="color:#f92672">*</span> shape <span style="color:#f92672">=</span> m_collisionShapes[j];
+		<span style="color:#66d9ef">delete</span> shape;
+	}
+	m_collisionShapes.clear();
+
+	<span style="color:#66d9ef">delete</span> m_dynamicsWorld;
+	m_dynamicsWorld <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_solver;
+	m_solver <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_broadphase;
+	m_broadphase <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_dispatcher;
+	m_dispatcher <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+
+	<span style="color:#66d9ef">delete</span> m_collisionConfiguration;
+	m_collisionConfiguration <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>逆序移除约束
+逆序移除碰撞对象 有使用MotionState的话 移除 MotionState
+清空内存管理器 m_collisionShapes 管理的物体
+删除世界
+。。。</p>
+<blockquote>
+</blockquote>
+<h3 id="basicexample-应用">BasicExample 应用</h3>
+<h4 id="方法-2">方法</h4>
+<h5 id="initphysics">initPhysics</h5>
+<p>设置高度轴</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">m_guiHelper<span style="color:#f92672">-&gt;</span>setUpAxis(<span style="color:#ae81ff">1</span>);
+</code></pre></div><p>1y 2z,只支持Y Z</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">createEmptyDynamicsWorld();
+</code></pre></div><p>执行 createEmptyDynamicsWorld(); 初始化</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//m_dynamicsWorld-&gt;setGravity(btVector3(0,0,0));
+</span><span style="color:#75715e"></span>m_guiHelper<span style="color:#f92672">-&gt;</span>createPhysicsDebugDrawer(m_dynamicsWorld);
+
+<span style="color:#66d9ef">if</span> (m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getDebugDrawer())
+	m_dynamicsWorld<span style="color:#f92672">-&gt;</span>getDebugDrawer()<span style="color:#f92672">-&gt;</span>setDebugMode(btIDebugDraw<span style="color:#f92672">::</span>DBG_DrawWireframe <span style="color:#f92672">+</span> btIDebugDraw<span style="color:#f92672">::</span>DBG_DrawContactPoints);
+</code></pre></div><p>设置debug</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">///create a few basic rigid bodies
+</span><span style="color:#75715e"></span>btBoxShape<span style="color:#f92672">*</span> groundShape <span style="color:#f92672">=</span> createBoxShape(btVector3(btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>)));
+
+<span style="color:#75715e">//groundShape-&gt;initializePolyhedralFeatures();
+</span><span style="color:#75715e">//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0,1,0),50);
+</span><span style="color:#75715e"></span>
+m_collisionShapes.push_back(groundShape);
+
+btTransform groundTransform;
+groundTransform.setIdentity();
+groundTransform.setOrigin(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">50</span>, <span style="color:#ae81ff">0</span>));
+
+{
+	btScalar <span style="color:#a6e22e">mass</span>(<span style="color:#ae81ff">0.</span>);
+	createRigidBody(mass, groundTransform, groundShape, btVector4(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>));
+}
+</code></pre></div><p>创建 地面</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">{
+	<span style="color:#75715e">//create a few dynamic rigidbodies
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Re-using the same collision is better for memory usage and performance
+</span><span style="color:#75715e"></span>
+	btBoxShape<span style="color:#f92672">*</span> colShape <span style="color:#f92672">=</span> createBoxShape(btVector3(<span style="color:#ae81ff">.1</span>, <span style="color:#ae81ff">.1</span>, <span style="color:#ae81ff">.1</span>));
+
+	<span style="color:#75715e">//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+</span><span style="color:#75715e"></span>	m_collisionShapes.push_back(colShape);
+
+	<span style="color:#75715e">/// Create Dynamic Objects
+</span><span style="color:#75715e"></span>	btTransform startTransform;
+	startTransform.setIdentity();
+
+	btScalar <span style="color:#a6e22e">mass</span>(<span style="color:#ae81ff">1.f</span>);
+
+	<span style="color:#75715e">//rigidbody is dynamic if and only if mass is non zero, otherwise static
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">bool</span> isDynamic <span style="color:#f92672">=</span> (mass <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0.f</span>);
+
+	btVector3 <span style="color:#a6e22e">localInertia</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+	<span style="color:#66d9ef">if</span> (isDynamic)
+		colShape<span style="color:#f92672">-&gt;</span>calculateLocalInertia(mass, localInertia);
+
+	<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> k <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; k <span style="color:#f92672">&lt;</span> ARRAY_SIZE_Y; k<span style="color:#f92672">++</span>)
+	{
+		<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> ARRAY_SIZE_X; i<span style="color:#f92672">++</span>)
+		{
+			<span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> ARRAY_SIZE_Z; j<span style="color:#f92672">++</span>)
+			{
+				startTransform.setOrigin(btVector3(
+					btScalar(<span style="color:#ae81ff">0.2</span> <span style="color:#f92672">*</span> i),
+					btScalar(<span style="color:#ae81ff">2</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">.2</span> <span style="color:#f92672">*</span> k),
+					btScalar(<span style="color:#ae81ff">0.2</span> <span style="color:#f92672">*</span> j)));
+
+				createRigidBody(mass, startTransform, colShape);
+			}
+		}
+	}
+}
+
+m_guiHelper<span style="color:#f92672">-&gt;</span>autogenerateGraphicsObjects(m_dynamicsWorld);
+</code></pre></div><p>创建5x5x5 的方块，使用 autogenerateGraphicsObjects 把力学世界的 物体 生成 显示对象</p>
+<h5 id="renderscene">renderScene</h5>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> BasicExample<span style="color:#f92672">::</span>renderScene()
+{
+	CommonRigidBodyBase<span style="color:#f92672">::</span>renderScene();
+}
+</code></pre></div><h5 id="resetcamera">resetCamera</h5>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">resetCamera</span>()
+{
+	<span style="color:#66d9ef">float</span> dist <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>;
+	<span style="color:#66d9ef">float</span> pitch <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">35</span>;
+	<span style="color:#66d9ef">float</span> yaw <span style="color:#f92672">=</span> <span style="color:#ae81ff">52</span>;
+	<span style="color:#66d9ef">float</span> targetPos[<span style="color:#ae81ff">3</span>] <span style="color:#f92672">=</span> {<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>};
+	m_guiHelper<span style="color:#f92672">-&gt;</span>resetCamera(dist, yaw, pitch, targetPos[<span style="color:#ae81ff">0</span>], targetPos[<span style="color:#ae81ff">1</span>], targetPos[<span style="color:#ae81ff">2</span>]);
+}
+</code></pre></div><p>设置相机所在位置 看向位置</p>
+<blockquote>
+</blockquote>
+<h2 id="图形相关-类的关系">图形相关 类的关系</h2>
+<h3 id="guihelperinterface-抽象类">GUIHelperInterface 抽象类</h3>
+<h3 id="openglguihelper-实现">OpenGLGuiHelper 实现</h3>
+
+    </section>
+
+
+  <footer class="post-footer">
+
+
+    
+    <figure class="author-image">
+
+        <a class="img" href="https://uuzzzga.github.io/my-blog/" style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.png)"><span class="hidden">uzzzzz</span></a>
+    </figure>
+    
+
+    <section class="author">
+
+  <p>uzzzzz</p>
+  
+
+</section>
+
+
+    
+    <section class="share">
+      <h4>Share this post</h4>
+      <a class="icon-twitter" style="font-size: 1.4em" href="https://twitter.com/share?text=HelloBullet%2002&amp;url=https%3a%2f%2fuuzzzga.github.io%2fmy-blog%2fpost%2f21%2f03%2fhellobullet-02%2f"
+          onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+          <span class="hidden">Twitter</span>
+      </a>
+      <a class="icon-facebook" style="font-size: 1.4em" href="https://www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fuuzzzga.github.io%2fmy-blog%2fpost%2f21%2f03%2fhellobullet-02%2f"
+          onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+          <span class="hidden">Facebook</span>
+      </a>
+      <a class="icon-google-plus" style="font-size: 1.4em" href="https://plus.google.com/share?url=https%3a%2f%2fuuzzzga.github.io%2fmy-blog%2fpost%2f21%2f03%2fhellobullet-02%2f"
+         onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+          <span class="hidden">Google+</span>
+      </a>
+    </section>
+    
+
+    
+    
+    
+
+  </footer>
+</article>
+
+</main>
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">My Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="https://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/syui/hugo-theme-air">hugo-theme-air</a> theme</section>
+        
+    </footer>
+    </div>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.fitvids.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/index.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.min.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.js"></script>  
+
+</body>
+</html>
+

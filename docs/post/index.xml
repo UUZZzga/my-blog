@@ -6,25 +6,118 @@
     <description>Recent content in Posts on My Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sun, 01 Jan 2017 00:00:00 +0000</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 19 Sep 2021 11:48:40 +0800</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>sample</title>
-      <link>https://uuzzzga.github.io/my-blog/post/test/</link>
-      <pubDate>Sun, 01 Jan 2017 00:00:00 +0000</pubDate>
+      <title>lua parser 负数小bug</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/lua-parser-negative/</link>
+      <pubDate>Sun, 19 Sep 2021 11:48:40 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/test/</guid>
-      <description>Hugo is the world&amp;rsquo;s fastest static website engine. It&amp;rsquo;s written in Go (aka Golang) and developed by bep, spf13 and friends.
- Below you will find some of the most common and helpful pages from our documentation.
- https://gohugo.io/documentation/</description>
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/lua-parser-negative/</guid>
+      <description>bug代码
+local a=-9223372036854775808 local b=-9223372036854775807-1 print(a==b) -- true print(a) -- -9.2233720368548e+18 print(b) -- -9223372036854775808 查找官方社区 http://lua-users.org/lists/lua-l/2020-03/msg00112.html http://lua-users.org/lists/lua-l/2020-03/msg00114.html
+经阅读代码发现有写解析代码（详见 llex.c read_numeral） 观察调用堆栈 lparser.c subexpr
+static BinOpr subexpr (LexState *ls, expdesc *v, int limit) { BinOpr op; UnOpr uop; enterlevel(ls); uop = getunopr(ls-&amp;gt;t.token); if (uop != OPR_NOUNOPR) { /* prefix (unary) operator? */ int line = ls-&amp;gt;linenumber; luaX_next(ls); /* skip operator */ subexpr(ls, v, UNARY_PRIORITY); luaK_prefix(ls-&amp;gt;fs, uop, v, line); } else simpleexp(ls, v); // .</description>
     </item>
     
     <item>
-      <title>test post</title>
-      <link>https://uuzzzga.github.io/my-blog/post/test/</link>
-      <pubDate>Fri, 01 Jan 2016 00:00:00 +0000</pubDate>
+      <title>c&#43;&#43;20 coroutines-ts 1</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-1/</link>
+      <pubDate>Wed, 01 Sep 2021 11:01:40 +0800</pubDate>
       
-      <guid>https://uuzzzga.github.io/my-blog/post/test/</guid>
-      <description>echo &amp;#34;hello world !!&amp;#34; </description>
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-1/</guid>
+      <description>#目标 目标正常执行以下代码
+task&amp;lt;int&amp;gt; fibon(int x) { if (x == 0) { co_return 0; } if (x == 1) { co_return 1; } co_return co_await fibon(x - 1) + co_await fibon(x - 2); } 为什么会出错 ##编译器遇到co_await的处理
+co_await MyCoroutine(args...); 以上代码会被处理为
+return_type MyCoroutine(args...) { //创建 coroutine coro  //复制参数到 coroutine 结构体  promise_type promise; coro.promise=promise; auto return_object = promise.get_return_object(); try { co_await promise.initial_suspend(); if(!coro.await_ready()){ coro.await_suspend(); } coro.await_resume(); } catch (...) { promise.unhandled_exception(); } co_await promise.</description>
+    </item>
+    
+    <item>
+      <title>c&#43;&#43;20 coroutines-ts 2</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-2/</link>
+      <pubDate>Wed, 01 Sep 2021 11:01:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-2/</guid>
+      <description>#目标 目标 设计一个scheduler调度器 正常执行以下代码
+task&amp;lt;int&amp;gt; fibon(int x) { if (x == 0) { co_return 0; } if (x == 1) { co_return 1; } co_return co_await fibon(x - 1) + co_await fibon(x - 2); } 未完</description>
+    </item>
+    
+    <item>
+      <title>c&#43;&#43;20 coroutines-ts 3</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-3/</link>
+      <pubDate>Wed, 01 Sep 2021 11:01:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/coroutines-ts-3/</guid>
+      <description>异常 对于以下代码
+try{ co_await MyCoroutine(args...); }catch(XXX e){ } 会被处理为
+return_type MyCoroutine(args...) { //创建 coroutine coro  //复制参数到 coroutine 结构体  promise_type promise; coro.promise=promise; auto return_object = promise.get_return_object(); try { co_await promise.initial_suspend(); if(!coro.await_ready()){ coro.await_suspend(); } if(promise.cancellation_requested()) goto end-label; ret coro.await_resume(); } catch (...) { promise.set_exception(std::current_exception()); } final_suspend: co_await promise.final_suspend(); //析构 promise  //析构 coroutine 结构体里的参数  //析构 coroutine coro } 未完</description>
+    </item>
+    
+    <item>
+      <title>Bgfx 02</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-02/</link>
+      <pubDate>Tue, 30 Mar 2021 16:36:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-02/</guid>
+      <description>PosColorVertex 类 ms_layout 静态属性 static bgfx::VertexLayout ms_layout; init 静态方法 ms_layout .begin() .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float) .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true) .end(); 初始化 ms_layout ms_layout 类型储存着 其他属性 的 类型顺序
+其他属性 float m_x; float m_y; float m_z; uint32_t m_abgr; ExampleCubes 类 init 方法 // Create static vertex buffer. m_vbh = bgfx::createVertexBuffer( // Static data can be passed with bgfx::makeRef 	bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices) ) , PosColorVertex::ms_layout ); bgfx::makeRef 构造一个 指针 构造一个 vbh 数据 s_cubeVertices 长度 s_cubeVertices的长度 ，数组结构顺序 PosColorVertex::ms_layout vbh 对应着opengl 的vbo</description>
+    </item>
+    
+    <item>
+      <title>Bgfx 01</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-01/</link>
+      <pubDate>Tue, 30 Mar 2021 09:45:15 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/03/bgfx-01/</guid>
+      <description>ExampleHelloWorld 类 init 方法 bgfx::Init init; init.type = args.m_type; init.vendorId = args.m_pciId; init.resolution.width = m_width; init.resolution.height = m_height; init.resolution.reset = m_reset; bgfx::init(init); 对bgfx 进行初始化 可以指定渲染引擎 init.type = bgfx::RendererType::Vulkan;
+m_debug = BGFX_DEBUG_TEXT; ... bgfx::setDebug(m_debug); 设置debug信息 其他可选项有
+ BGFX_DEBUG_IFH 跳过所有呈现调用。这在分析CPU和GPU之间的潜在瓶颈时非常有用。 BGFX_DEBUG_PROFILER 启用探查器(profiler)。 BGFX_DEBUG_STATS 显示内部统计信息。 BGFX_DEBUG_TEXT 显示调试文本。 BGFX_DEBUG_WIREFRAME 线框渲染。所有渲染原语都将渲染为线。  // Set view 0 clear state. bgfx::setViewClear(0 , BGFX_CLEAR_COLOR|BGFX_CLEAR_DEPTH , 0x303030ff , 1.0f , 0 ); [in] _id: View id. [in] flags: 清除标志。使用 BGFX_CLEAR_NONE 移除任何清除操作。请参见： BGFX_CLEAR*.</description>
+    </item>
+    
+    <item>
+      <title>HelloBullet 02</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-02/</link>
+      <pubDate>Thu, 25 Mar 2021 16:49:26 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-02/</guid>
+      <description>物理计算 类的关系   抽象类 CommonExampleInterface   初始化 和 结束 virtual void initPhysics() = 0; virtual void exitPhysics() = 0;   计算物理 virtual void stepSimulation(float deltaTime) = 0;   图像GUI相关 virtual void updateGraphics() {} virtual void renderScene() = 0;   窗口回执
+virtual bool mouseMoveCallback(float x, float y) = 0; virtual bool mouseButtonCallback(int button, int state, float x, float y) = 0; virtual bool keyboardCallback(int key, int state) = 0;   debug相关 virtual void physicsDebugDraw(int debugFlags) = 0; //目前，我们在 Bullet/src/LinearMath/btIDebugDraw.</description>
+    </item>
+    
+    <item>
+      <title>HelloBullet 01</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-01/</link>
+      <pubDate>Tue, 23 Mar 2021 22:59:48 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-01/</guid>
+      <description>初始化   碰撞配置 //默认 碰撞配置 btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration(); //使用默认 碰撞调度器 btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration); 碰撞调度器所在 src/CollisionDispatch
+  Broad-Phase //通用的Broad-Phase btBroadphaseInterface* overlappingPairCache = new btDbvtBroadphase(); https://zhuanlan.zhihu.com/p/113415779 如果把所有物体 两两计算碰撞 计算量 O(N^2) Broad-Phase 就是把明显不相关的 计算排除掉
+  约束求解器 //默认约束求解器 btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver; 约束求解器 src/BulletDynamics/ConstraintSolver
+  创建一个力学世界 btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);   设置重力方向 dynamicsWorld-&amp;gt;setGravity(btVector3(0, -10, 0));   创建 刚体   初始化内存 管理工具 btAlignedObjectArray&amp;lt;btCollisionShape*&amp;gt; collisionShapes;   创建一个立方体 btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(50.</description>
+    </item>
+    
+    <item>
+      <title>HelloHugo</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/03/hellohugo/</link>
+      <pubDate>Tue, 23 Mar 2021 09:19:06 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/03/hellohugo/</guid>
+      <description>测试 test  无序列表  1   a   A  有序列表  1.a 2.b 3.c 9.d 注意  区块引用  区块引用测试
+ 再次嵌套
+ 再次再次嵌套
+   行内式 测试跳转到测试锚点
+图片 bing logobing
+删除线 aa
+代码 printf(&amp;quot;Hello World!\n&amp;quot;);
+printf(&amp;#34;Hello World!\n&amp;#34;); using namespace std; cout&amp;lt;&amp;lt;&amp;#34;Hello World!&amp;#34;&amp;lt;&amp;lt;endl; </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/07/mysql/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/07/mysql/</guid>
+      <description>docker run &amp;ndash;name mysql-test -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.5 &amp;ndash;character-set-server=utf8mb4 &amp;ndash;collation-server=utf8mb4_unicode_ci</description>
     </item>
     
   </channel>

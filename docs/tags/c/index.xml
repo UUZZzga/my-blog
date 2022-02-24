@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>c on My Blog</title>
+    <link>https://uuzzzga.github.io/my-blog/tags/c/</link>
+    <description>Recent content in c on My Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sun, 19 Sep 2021 11:48:40 +0800</lastBuildDate><atom:link href="https://uuzzzga.github.io/my-blog/tags/c/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>lua parser 负数小bug</title>
+      <link>https://uuzzzga.github.io/my-blog/post/21/09/lua-parser-negative/</link>
+      <pubDate>Sun, 19 Sep 2021 11:48:40 +0800</pubDate>
+      
+      <guid>https://uuzzzga.github.io/my-blog/post/21/09/lua-parser-negative/</guid>
+      <description>bug代码
+local a=-9223372036854775808 local b=-9223372036854775807-1 print(a==b) -- true print(a) -- -9.2233720368548e+18 print(b) -- -9223372036854775808 查找官方社区 http://lua-users.org/lists/lua-l/2020-03/msg00112.html http://lua-users.org/lists/lua-l/2020-03/msg00114.html
+经阅读代码发现有写解析代码（详见 llex.c read_numeral） 观察调用堆栈 lparser.c subexpr
+static BinOpr subexpr (LexState *ls, expdesc *v, int limit) { BinOpr op; UnOpr uop; enterlevel(ls); uop = getunopr(ls-&amp;gt;t.token); if (uop != OPR_NOUNOPR) { /* prefix (unary) operator? */ int line = ls-&amp;gt;linenumber; luaX_next(ls); /* skip operator */ subexpr(ls, v, UNARY_PRIORITY); luaK_prefix(ls-&amp;gt;fs, uop, v, line); } else simpleexp(ls, v); // .</description>
+    </item>
+    
+  </channel>
+</rss>

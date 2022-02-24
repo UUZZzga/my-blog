@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  	<meta property="og:title" content=" bgfx &middot;  My Blog" />
+  	<meta property="og:site_name" content="My Blog" />
+  	<meta property="og:url" content="https://uuzzzga.github.io/my-blog/tags/bgfx/" />
+    
+    
+    <meta property="og:type" content="website" />
+    
+
+  <title>
+     bgfx &middot;  My Blog
+  </title>
+
+    <meta name="description" content="个人博客" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://uuzzzga.github.io/my-blog/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="https://uuzzzga.github.io/my-blog/images/apple-touch-icon.png" />
+    
+    <link rel="stylesheet" type="text/css" href="https://uuzzzga.github.io/my-blog/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400|Inconsolata" />
+
+
+    
+      
+          <link href="https://uuzzzga.github.io/my-blog/index.xml" rel="alternate" type="application/rss+xml" title="My Blog" />
+      
+      
+        <link href="/my-blog/tags/bgfx/index.xml" rel="alternate" type="application/rss+xml" title="bgfx &middot; My Blog" />
+      
+    
+    <meta name="generator" content="Hugo 0.82.0" />
+
+    <link rel="canonical" href="https://uuzzzga.github.io/my-blog/tags/bgfx/" />
+
+     
+</head>
+<body class="nav-closed">
+<div id="particles-js"></div>
+  
+
+
+ <div class="site-wrapper">
+
+
+
+
+	<header class="main-header" style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.jpg)">
+
+    <nav class="main-nav overlay clearfix">
+      
+        <a class="blog-logo" href="https://uuzzzga.github.io/my-blog/"><img src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Home" /></a>
+      
+      
+        
+          <a class="menu-button icon-feed" href="/my-blog/tags/bgfx/index.xml">&nbsp;&nbsp;Subscribe</a>
+        
+      
+    </nav>
+    <div class="vertical">
+
+        <div class="main-header-content inner">
+            <h1 class="page-title">
+
+              <a class="btn-bootstrap-2" href="#content">My Blog</a>
+          </h1>
+        </div>
+</div>
+    <a class="scroll-down icon-arrow-left" href="#content"><span class="hidden">Scroll Down</span></a>
+</header>
+
+<main id="content" class="content" role="main">
+    
+    
+    
+    
+
+	<div class="extra-pagination inner">
+    <nav class="pagination" role="navigation">
+	
+	<span class="page-number">Page 1 of 1</span>
+	
+</nav>
+
+	</div>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/bgfx-02/">Bgfx 02</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="poscolorvertex-类">PosColorVertex 类</h2>
+<h3 id="ms_layout-静态属性">ms_layout 静态属性</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">static</span> bgfx<span style="color:#f92672">::</span>VertexLayout ms_layout;
+</code></pre></div><h3 id="init-静态方法">init 静态方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">ms_layout
+	.begin()
+	.add(bgfx<span style="color:#f92672">::</span>Attrib<span style="color:#f92672">::</span>Position, <span style="color:#ae81ff">3</span>, bgfx<span style="color:#f92672">::</span>AttribType<span style="color:#f92672">::</span>Float)
+	.add(bgfx<span style="color:#f92672">::</span>Attrib<span style="color:#f92672">::</span>Color0,   <span style="color:#ae81ff">4</span>, bgfx<span style="color:#f92672">::</span>AttribType<span style="color:#f92672">::</span>Uint8, true)
+	.end();
+</code></pre></div><p>初始化 ms_layout
+ms_layout 类型储存着 其他属性 的 类型顺序</p>
+<h3 id="其他属性">其他属性</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">float</span> m_x;
+<span style="color:#66d9ef">float</span> m_y;
+<span style="color:#66d9ef">float</span> m_z;
+<span style="color:#66d9ef">uint32_t</span> m_abgr;
+</code></pre></div><h2 id="examplecubes-类">ExampleCubes 类</h2>
+<h3 id="init-方法">init 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Create static vertex buffer.
+</span><span style="color:#75715e"></span>m_vbh <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>createVertexBuffer(
+	<span style="color:#75715e">// Static data can be passed with bgfx::makeRef
+</span><span style="color:#75715e"></span>	  bgfx<span style="color:#f92672">::</span>makeRef(s_cubeVertices, <span style="color:#66d9ef">sizeof</span>(s_cubeVertices) )
+	, PosColorVertex<span style="color:#f92672">::</span>ms_layout
+	);
+</code></pre></div><p>bgfx::makeRef 构造一个 指针
+构造一个 vbh 数据 s_cubeVertices 长度 s_cubeVertices的长度 ，数组结构顺序 PosColorVertex::ms_layout
+vbh 对应着opengl 的vbo</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Create static index buffer for triangle list rendering.
+</span><span style="color:#75715e"></span>m_ibh[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>createIndexBuffer(
+	<span style="color:#75715e">// Static data can be passed with bgfx::makeRef
+</span><span style="color:#75715e"></span>	bgfx<span style="color:#f92672">::</span>makeRef(s_cubeTriList, <span style="color:#66d9ef">sizeof</span>(s_cubeTriList) )
+	);
+
+...
+
+<span style="color:#75715e">// Create static index buffer for point list rendering.
+</span><span style="color:#75715e"></span>m_ibh[<span style="color:#ae81ff">4</span>] <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>createIndexBuffer(
+	<span style="color:#75715e">// Static data can be passed with bgfx::makeRef
+</span><span style="color:#75715e"></span>	bgfx<span style="color:#f92672">::</span>makeRef(s_cubePoints, <span style="color:#66d9ef">sizeof</span>(s_cubePoints) )
+	);
+</code></pre></div><p>储存着vbh的下标，用下标来代替vbh
+ibh 对应着opengl 的EBO</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Create program from shaders.
+</span><span style="color:#75715e"></span>m_program <span style="color:#f92672">=</span> loadProgram(<span style="color:#e6db74">&#34;vs_cubes&#34;</span>, <span style="color:#e6db74">&#34;fs_cubes&#34;</span>);
+</code></pre></div><p>创建并加载 着色器</p>
+
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/bgfx/">#bgfx</a>,
+            
+        
+        <time class="post-date" datetime="2021-03-30T16:36:40&#43;08:00">
+            30 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+	   
+<article class="post post">
+    <header class="post-header">
+        <h2 class="post-title"><a href="/my-blog/post/21/03/bgfx-01/">Bgfx 01</a></h2>
+    </header>
+    <section class="post-excerpt">
+      <p>
+          <section class="post-content">
+            <h2 id="examplehelloworld-类">ExampleHelloWorld 类</h2>
+<h3 id="init-方法">init 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>Init init;
+init.type     <span style="color:#f92672">=</span> args.m_type;
+init.vendorId <span style="color:#f92672">=</span> args.m_pciId;
+init.resolution.width  <span style="color:#f92672">=</span> m_width;
+init.resolution.height <span style="color:#f92672">=</span> m_height;
+init.resolution.reset  <span style="color:#f92672">=</span> m_reset;
+bgfx<span style="color:#f92672">::</span>init(init);
+</code></pre></div><p>对bgfx 进行初始化
+可以指定渲染引擎
+<code>init.type = bgfx::RendererType::Vulkan;</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">m_debug  <span style="color:#f92672">=</span> BGFX_DEBUG_TEXT;
+...
+bgfx<span style="color:#f92672">::</span>setDebug(m_debug);
+</code></pre></div><p>设置debug信息
+其他可选项有</p>
+<ol>
+<li>BGFX_DEBUG_IFH 跳过所有呈现调用。这在分析CPU和GPU之间的潜在瓶颈时非常有用。</li>
+<li>BGFX_DEBUG_PROFILER 启用探查器(profiler)。</li>
+<li>BGFX_DEBUG_STATS 显示内部统计信息。</li>
+<li>BGFX_DEBUG_TEXT 显示调试文本。</li>
+<li>BGFX_DEBUG_WIREFRAME 线框渲染。所有渲染原语都将渲染为线。</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">// Set view 0 clear state.
+</span><span style="color:#75715e"></span>bgfx<span style="color:#f92672">::</span>setViewClear(<span style="color:#ae81ff">0</span>
+	, BGFX_CLEAR_COLOR<span style="color:#f92672">|</span>BGFX_CLEAR_DEPTH
+	, <span style="color:#ae81ff">0x303030ff</span>
+	, <span style="color:#ae81ff">1.0f</span>
+	, <span style="color:#ae81ff">0</span>
+	);
+</code></pre></div><p>[in] _id: View id.
+[in] <em>flags: 清除标志。使用 BGFX_CLEAR_NONE 移除任何清除操作。请参见： BGFX_CLEAR</em>*.
+[in] _rgba: 颜色清除值。
+[in] _depth: 深度清除值。
+[in] _stencil: Stencil 清除值。
+设置 BGFX_CLEAR_COLOR|BGFX_CLEAR_DEPTH 清除时使用 颜色和深度 清除后颜色为 303030 深度为1.0</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">imguiCreate();
+</code></pre></div><p>使用了imgui 做窗口</p>
+<h3 id="shutdown-方法">shutdown 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">shutdown</span>() <span style="color:#66d9ef">override</span>
+{
+	imguiDestroy();
+
+	<span style="color:#75715e">// Shutdown bgfx.
+</span><span style="color:#75715e"></span>	bgfx<span style="color:#f92672">::</span>shutdown();
+
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>先关闭窗口再关闭渲染</p>
+<h3 id="update-方法">update 方法</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>entry<span style="color:#f92672">::</span>processEvents(m_width, m_height, m_debug, m_reset, <span style="color:#f92672">&amp;</span>m_mouseState) )
+{
+	...
+}
+<span style="color:#66d9ef">return</span> false;
+</code></pre></div><p>processEvents 无阻判断是否 发生事件
+处理事件
+Axis 手柄 轴事件
+Char,
+Exit 退出事件 发生后 要手动检查是否退出
+Gamepad 手柄事件
+Key 键盘事件
+Mouse 鼠标事件
+Size 窗口大小改变事件
+Window 窗口事件
+Suspend 暂停事件
+DropFile 拖拽文件事件</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>setViewRect(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#66d9ef">uint16_t</span>(m_width), <span style="color:#66d9ef">uint16_t</span>(m_height) );
+</code></pre></div><p>为 id为0的 view 设置视图矩形。绘制图元外部视图将被剪裁。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>touch(<span style="color:#ae81ff">0</span>);
+</code></pre></div><p>如果没有其他绘制调用提交到视图0，则此虚拟绘制调用用于确保视图0被清除。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>dbgTextClear();
+</code></pre></div><p>清除内部调试文本缓冲区。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>dbgTextImage(
+	  bx<span style="color:#f92672">::</span>max<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">uint16_t</span><span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">uint16_t</span>(m_width <span style="color:#f92672">/</span><span style="color:#ae81ff">2</span><span style="color:#f92672">/</span><span style="color:#ae81ff">8</span> ), <span style="color:#ae81ff">20</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">20</span>
+	, bx<span style="color:#f92672">::</span>max<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">uint16_t</span><span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">uint16_t</span>(m_height<span style="color:#f92672">/</span><span style="color:#ae81ff">2</span><span style="color:#f92672">/</span><span style="color:#ae81ff">16</span>),  <span style="color:#ae81ff">6</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">6</span>
+	, <span style="color:#ae81ff">40</span>
+	, <span style="color:#ae81ff">12</span>
+	, s_logo
+	, <span style="color:#ae81ff">160</span>
+	);
+</code></pre></div><p>_x , _y:  左上角 2D位置.
+_width , _height: 图像宽度和高度。
+_data: 原始图像数据（字符/属性原始编码）。
+_pitch: 图像间距（字节）。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;Color can be changed with ANSI </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[9;me</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[10;ms</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[11;mc</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[12;ma</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[13;mp</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[14;me</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[0m code too.&#34;</span>);
+
+bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">80</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;0m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;1m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 2m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 3m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 4m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 5m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 6m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[; 7m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[0m&#34;</span>);
+bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">80</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;8m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;9m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;10m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;11m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;12m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;13m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;14m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[;15m    </span><span style="color:#ae81ff">\x1b</span><span style="color:#e6db74">[0m&#34;</span>);
+
+<span style="color:#66d9ef">const</span> bgfx<span style="color:#f92672">::</span>Stats<span style="color:#f92672">*</span> stats <span style="color:#f92672">=</span> bgfx<span style="color:#f92672">::</span>getStats();
+bgfx<span style="color:#f92672">::</span>dbgTextPrintf(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">0x0f</span>, <span style="color:#e6db74">&#34;Backbuffer %dW x %dH in pixels, debug text %dW x %dH in characters.&#34;</span>
+	, stats<span style="color:#f92672">-&gt;</span>width
+	, stats<span style="color:#f92672">-&gt;</span>height
+	, stats<span style="color:#f92672">-&gt;</span>textWidth
+	, stats<span style="color:#f92672">-&gt;</span>textHeight
+	);
+</code></pre></div><p>打印到内部调试文本字符缓冲区
+_x , _y:  左上角 单位 字符
+_attr: 调色板。其中前4位表示背景索引，底部4位表示标准VGA文本调色板（ANSI转义代码）的前景色。
+_format: printf 风格的 格式化字符串. 可使用 ANSI转义代码</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//前进到下一帧。渲染线程将被踢到处理提交的渲染原语。
+</span><span style="color:#75715e"></span>bgfx<span style="color:#f92672">::</span>frame();
+<span style="color:#66d9ef">return</span> true;
+</code></pre></div>
+          </section>
+      </p>
+      
+    </section>
+    <footer class="post-meta">
+        
+            <img class="author-thumb" src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Author image" nopin="nopin" />
+        
+        
+            uzzzzz
+        
+        on
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a>,
+            
+                <a href="https://uuzzzga.github.io/my-blog/tags/bgfx/">#bgfx</a>,
+            
+        
+        <time class="post-date" datetime="2021-03-30T09:45:15&#43;08:00">
+            30 Mar 2021
+        </time>
+    </footer>
+</article>
+
+	
+
+	<nav class="pagination" role="navigation">
+	
+	<span class="page-number">Page 1 of 1</span>
+	
+</nav>
+
+</main>
+
+
+
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">My Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="https://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/syui/hugo-theme-air">hugo-theme-air</a> theme</section>
+        
+    </footer>
+    </div>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.fitvids.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/index.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.min.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.js"></script>  
+
+</body>
+</html>
+

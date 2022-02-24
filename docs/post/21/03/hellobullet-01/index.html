@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  	<meta property="og:title" content=" HelloBullet 01 &middot;  My Blog" />
+  	<meta property="og:site_name" content="My Blog" />
+  	<meta property="og:url" content="https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-01/" />
+    
+    
+  	<meta property="og:type" content="article" />
+
+    <meta property="og:article:published_time" content="2021-03-23T22:59:48&#43;08:00" />
+
+    
+    <meta property="og:article:tag" content="c&#43;&#43;" />
+    
+    <meta property="og:article:tag" content="Bullet" />
+    
+    
+
+  <title>
+     HelloBullet 01 &middot;  My Blog
+  </title>
+
+    <meta name="description" content="个人博客" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="shortcut icon" href="https://uuzzzga.github.io/my-blog/images/favicon.ico">
+	  <link rel="apple-touch-icon" href="https://uuzzzga.github.io/my-blog/images/apple-touch-icon.png" />
+    
+    <link rel="stylesheet" type="text/css" href="https://uuzzzga.github.io/my-blog/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400|Inconsolata" />
+
+
+    
+      
+          <link href="https://uuzzzga.github.io/my-blog/index.xml" rel="alternate" type="application/rss+xml" title="My Blog" />
+      
+      
+    
+    <meta name="generator" content="Hugo 0.82.0" />
+
+    <link rel="canonical" href="https://uuzzzga.github.io/my-blog/post/21/03/hellobullet-01/" />
+
+     
+</head>
+<body class="nav-closed">
+<div id="particles-js"></div>
+  
+
+
+ <div class="site-wrapper">
+
+
+
+<header class="main-header " style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.jpg)">
+
+    <nav class="main-nav overlay clearfix">
+        
+            <a class="blog-logo" href="https://uuzzzga.github.io/my-blog/"><img src="https://uuzzzga.github.io/my-blog/images/user.png" alt="Blog Logo" /></a>
+        
+        
+    </nav>
+<div class="vertical">
+        <div class="main-header-content inner">
+            <h1 class="page-title">
+              <a class="btn-bootstrap-2" href="#content">My Blog</a>
+          </h1>
+          <h2 class="page-description">个人博客</h2>
+        </div>
+</div>
+    <a class="scroll-down icon-arrow-left" href="#content"><span class="hidden">Scroll Down</span></a>
+</header>
+
+  <main id="content" class="content" role="main">
+
+
+  <article class="post post">
+
+    <header class="post-header">
+        <h1 class="post-title">HelloBullet 01</h1>
+        <section class="post-meta">
+        
+	<time class="post-date" datetime="2021-03-23">
+            2021-03-23
+          </time>
+        
+         
+          <span class="post-tag small"><a href="https://uuzzzga.github.io/my-blog/tags/c&#43;&#43;/">#c&#43;&#43;</a></span>
+         
+          <span class="post-tag small"><a href="https://uuzzzga.github.io/my-blog/tags/bullet/">#Bullet</a></span>
+         
+        </section>
+    </header>
+
+    <section class="post-content">
+      <h2 id="初始化">初始化</h2>
+<blockquote>
+</blockquote>
+<h3 id="碰撞配置">碰撞配置</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//默认 碰撞配置
+</span><span style="color:#75715e"></span>btDefaultCollisionConfiguration<span style="color:#f92672">*</span> collisionConfiguration <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultCollisionConfiguration();
+<span style="color:#75715e">//使用默认 碰撞调度器
+</span><span style="color:#75715e"></span>btCollisionDispatcher<span style="color:#f92672">*</span> dispatcher <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btCollisionDispatcher(collisionConfiguration);
+</code></pre></div><p>碰撞调度器所在 src/CollisionDispatch</p>
+<blockquote>
+</blockquote>
+<h3 id="broad-phase">Broad-Phase</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//通用的Broad-Phase
+</span><span style="color:#75715e"></span>btBroadphaseInterface<span style="color:#f92672">*</span> overlappingPairCache <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDbvtBroadphase();
+</code></pre></div><p><a href="https://zhuanlan.zhihu.com/p/113415779">https://zhuanlan.zhihu.com/p/113415779</a>
+如果把所有物体 两两计算碰撞 计算量 O(N^2)
+Broad-Phase 就是把明显不相关的 计算排除掉</p>
+<blockquote>
+</blockquote>
+<h3 id="约束求解器">约束求解器</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//默认约束求解器
+</span><span style="color:#75715e"></span>btSequentialImpulseConstraintSolver<span style="color:#f92672">*</span> solver <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btSequentialImpulseConstraintSolver;
+</code></pre></div><p>约束求解器 src/BulletDynamics/ConstraintSolver</p>
+<blockquote>
+</blockquote>
+<h3 id="创建一个力学世界">创建一个力学世界</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btDiscreteDynamicsWorld<span style="color:#f92672">*</span> dynamicsWorld <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="设置重力方向">设置重力方向</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dynamicsWorld<span style="color:#f92672">-&gt;</span>setGravity(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">10</span>, <span style="color:#ae81ff">0</span>));
+</code></pre></div><blockquote>
+</blockquote>
+<h2 id="创建-刚体">创建 刚体</h2>
+<blockquote>
+</blockquote>
+<h3 id="初始化内存-管理工具">初始化内存 管理工具</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btAlignedObjectArray<span style="color:#f92672">&lt;</span>btCollisionShape<span style="color:#f92672">*&gt;</span> collisionShapes;
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="创建一个立方体">创建一个立方体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btCollisionShape<span style="color:#f92672">*</span> groundShape <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btBoxShape(btVector3(btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>), btScalar(<span style="color:#ae81ff">50.</span>)));
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="交由内存管理工具管理">交由内存管理工具管理</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">collisionShapes.push_back(groundShape);
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="创建-变换矩阵">创建 变换矩阵</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btTransform groundTransform;
+groundTransform.setIdentity();
+groundTransform.setOrigin(btVector3(<span style="color:#ae81ff">0</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">56</span>, <span style="color:#ae81ff">0</span>));
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="局部-惯量">局部 惯量</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btVector3 <span style="color:#a6e22e">localInertia</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>);
+<span style="color:#66d9ef">if</span> (isDynamic)
+	groundShape<span style="color:#f92672">-&gt;</span>calculateLocalInertia(mass, localInertia);
+</code></pre></div><p>只有有重量的物体才能是非静态、有局部惯量</p>
+<blockquote>
+</blockquote>
+<h3 id="运动轨迹-插值">运动轨迹 插值</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btDefaultMotionState<span style="color:#f92672">*</span> myMotionState <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btDefaultMotionState(groundTransform);
+</code></pre></div><p>使用默认的插值 同步“活动”对象</p>
+<blockquote>
+</blockquote>
+<h3 id="创建刚体">创建刚体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">btRigidBody<span style="color:#f92672">::</span>btRigidBodyConstructionInfo rbInfo(mass, myMotionState, groundShape, localInertia);
+btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> btRigidBody(rbInfo);
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="将刚体添加到力学世界">将刚体添加到力学世界</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dynamicsWorld<span style="color:#f92672">-&gt;</span>addRigidBody(body);
+</code></pre></div><blockquote>
+</blockquote>
+<h2 id="模拟计算">模拟计算</h2>
+<blockquote>
+</blockquote>
+<h3 id="步进模拟">步进模拟</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">dynamicsWorld<span style="color:#f92672">-&gt;</span>stepSimulation(<span style="color:#ae81ff">1.f</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">60.f</span>, <span style="color:#ae81ff">10</span>);
+</code></pre></div><p>头文件定义</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">virtual</span> <span style="color:#66d9ef">int</span> <span style="color:#a6e22e">stepSimulation</span>( btScalar timeStep,<span style="color:#66d9ef">int</span> maxSubSteps<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, btScalar fixedTimeStep<span style="color:#f92672">=</span>btScalar(<span style="color:#ae81ff">1.</span>)<span style="color:#f92672">/</span>btScalar(<span style="color:#ae81ff">60.</span>));
+</code></pre></div><p>timeStep 剩余时间，maxSubSteps 最大执行步骤，fixedTimeStep 一步多长时间</p>
+<blockquote>
+</blockquote>
+<h3 id="得到模拟结果">得到模拟结果</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">
+<span style="color:#66d9ef">for</span>(<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;i <span style="color:#f92672">&lt;</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumCollisionObjects(); <span style="color:#f92672">++</span>i){
+	btCollisionObject<span style="color:#f92672">*</span> obj <span style="color:#f92672">=</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getCollisionObjectArray()[i];
+	btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> btRigidBody<span style="color:#f92672">::</span>upcast(obj);
+	btTransform trans;
+	<span style="color:#66d9ef">if</span> (body <span style="color:#f92672">&amp;&amp;</span> body<span style="color:#f92672">-&gt;</span>getMotionState())
+	{
+		body<span style="color:#f92672">-&gt;</span>getMotionState()<span style="color:#f92672">-&gt;</span>getWorldTransform(trans);
+	}
+	<span style="color:#66d9ef">else</span>
+	{
+		trans <span style="color:#f92672">=</span> obj<span style="color:#f92672">-&gt;</span>getWorldTransform();
+	}
+	<span style="color:#75715e">//trans 就是物体的 变换矩阵
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>得到具体坐标</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp">trans.getOrigin().getX();
+trans.getOrigin().getY();
+trans.getOrigin().getZ();
+</code></pre></div><blockquote>
+</blockquote>
+<h2 id="清理结果">清理结果</h2>
+<blockquote>
+</blockquote>
+<h3 id="从力学世界移除物体">从力学世界移除物体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">for</span> (i <span style="color:#f92672">=</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getNumCollisionObjects() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; i <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; i<span style="color:#f92672">--</span>)
+{
+	btCollisionObject<span style="color:#f92672">*</span> obj <span style="color:#f92672">=</span> dynamicsWorld<span style="color:#f92672">-&gt;</span>getCollisionObjectArray()[i];
+	btRigidBody<span style="color:#f92672">*</span> body <span style="color:#f92672">=</span> btRigidBody<span style="color:#f92672">::</span>upcast(obj);
+	<span style="color:#66d9ef">if</span> (body <span style="color:#f92672">&amp;&amp;</span> body<span style="color:#f92672">-&gt;</span>getMotionState())
+	{
+		<span style="color:#66d9ef">delete</span> body<span style="color:#f92672">-&gt;</span>getMotionState();
+	}
+	dynamicsWorld<span style="color:#f92672">-&gt;</span>removeCollisionObject(obj);
+	<span style="color:#66d9ef">delete</span> obj;
+}
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="清空内存管理器管理的物体">清空内存管理器管理的物体</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> j <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; j <span style="color:#f92672">&lt;</span> collisionShapes.size(); j<span style="color:#f92672">++</span>)
+{
+	btCollisionShape<span style="color:#f92672">*</span> shape <span style="color:#f92672">=</span> collisionShapes[j];
+	collisionShapes[j] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+	<span style="color:#66d9ef">delete</span> shape;
+}
+
+collisionShapes.clear();
+</code></pre></div><blockquote>
+</blockquote>
+<h3 id="删除">删除</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cpp" data-lang="cpp"><span style="color:#75715e">//删除力学世界
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> dynamicsWorld;
+
+<span style="color:#75715e">//删除解算器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> solver;
+
+<span style="color:#75715e">//删除 broad-phase
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> overlappingPairCache;
+
+<span style="color:#75715e">//删除 调度器
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> dispatcher;
+
+<span style="color:#75715e">//删除 碰撞配置
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">delete</span> collisionConfiguration;
+</code></pre></div>
+    </section>
+
+
+  <footer class="post-footer">
+
+
+    
+    <figure class="author-image">
+
+        <a class="img" href="https://uuzzzga.github.io/my-blog/" style="background-image: url(https://uuzzzga.github.io/my-blog/images/user.png)"><span class="hidden">uzzzzz</span></a>
+    </figure>
+    
+
+    <section class="author">
+
+  <p>uzzzzz</p>
+  
+
+</section>
+
+
+    
+    <section class="share">
+      <h4>Share this post</h4>
+      <a class="icon-twitter" style="font-size: 1.4em" href="https://twitter.com/share?text=HelloBullet%2001&amp;url=https%3a%2f%2fuuzzzga.github.io%2fmy-blog%2fpost%2f21%2f03%2fhellobullet-01%2f"
+          onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+          <span class="hidden">Twitter</span>
+      </a>
+      <a class="icon-facebook" style="font-size: 1.4em" href="https://www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fuuzzzga.github.io%2fmy-blog%2fpost%2f21%2f03%2fhellobullet-01%2f"
+          onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+          <span class="hidden">Facebook</span>
+      </a>
+      <a class="icon-google-plus" style="font-size: 1.4em" href="https://plus.google.com/share?url=https%3a%2f%2fuuzzzga.github.io%2fmy-blog%2fpost%2f21%2f03%2fhellobullet-01%2f"
+         onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+          <span class="hidden">Google+</span>
+      </a>
+    </section>
+    
+
+    
+    
+    
+
+  </footer>
+</article>
+
+</main>
+    <footer class="site-footer clearfix">
+        <section class="copyright"><a href="">My Blog</a> </section>
+        
+        <section class="poweredby">Proudly generated by <a class="icon-hugo" href="https://gohugo.io">HUGO</a>, with <a class="icon-theme" href="https://github.com/syui/hugo-theme-air">hugo-theme-air</a> theme</section>
+        
+    </footer>
+    </div>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/jquery.fitvids.js"></script>
+    <script type="text/javascript" src="https://uuzzzga.github.io/my-blog/js/index.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.min.js"></script>
+    <script src="https://uuzzzga.github.io/my-blog/js/particles.js"></script>  
+
+</body>
+</html>
+
