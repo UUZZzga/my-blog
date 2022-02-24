@@ -1,3 +1,10 @@
 baseURL = "http://example.org/"
 languageCode = "zh-cn"
-title = "My New Hugo Site"
+title = "My Blog"
+theme = "hugo-theme-air"
+
+
+[params]
+  author = "uzzzzz"
+  description = "个人博客"
+  share = false
