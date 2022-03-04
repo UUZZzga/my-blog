@@ -13,7 +13,7 @@
       <pubDate>Fri, 04 Mar 2022 23:50:40 +0800</pubDate>
       
       <guid>https://blog.uzzzzz.xyz/post/22/03/uml/</guid>
-      <description>@startuml Alice -&amp;gt; Bob: Authentication Request Bob --&amp;gt; Alice: Authentication Response Alice -&amp;gt; Bob: Another authentication Request Alice &amp;lt;-- Bob: Another authentication Response @enduml {{ }}</description>
+      <description>@startuml Alice -&amp;gt; Bob: Authentication Request Bob --&amp;gt; Alice: Authentication Response Alice -&amp;gt; Bob: Another authentication Request Alice &amp;lt;-- Bob: Another authentication Response @enduml (function () {let plantumlPrefix = &#34;language-plantuml&#34;;Array.prototype.forEach.call(document.querySelectorAll(&#34;[class^=&#34; + plantumlPrefix + &#34;]&#34;), function (code) {let image = document.createElement(&#34;IMG&#34;);image.loading = &#39;lazy&#39;; image.src = &#39;http://www.plantuml.com/plantuml/svg/&#39; + plantumlEncoder.encode(code.innerText);code.parentNode.insertBefore(image, code);code.style.display = &#39;none&#39;;});})(); </description>
     </item>
     
   </channel>

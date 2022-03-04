@@ -22,4 +22,4 @@ Alice <-- Bob: Another authentication Response
 ```
 
 
-{{ <plantuml> }}
+{{<plantuml>}}
