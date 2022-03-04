@@ -1,0 +1,14 @@
+<!-- PlantUML -->
+<script src="https://cdn.jsdelivr.net/npm/plantuml-encoder@1.4.0/dist/plantuml-encoder.min.js"></script>
+<script>
+  (function () {
+    let plantumlPrefix = "language-plantuml";
+    Array.prototype.forEach.call(document.querySelectorAll("[class^=" + plantumlPrefix + "]"), function (code) {
+      let image = document.createElement("IMG");
+      image.loading = 'lazy'; // Lazy loading
+      image.src = 'http://www.plantuml.com/plantuml/svg/' + plantumlEncoder.encode(code.innerText);
+      code.parentNode.insertBefore(image, code);
+      code.style.display = 'none';
+    });
+  })();
+</script>

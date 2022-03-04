@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>plantuml on My Blog</title>
+    <link>https://blog.uzzzzz.xyz/tags/plantuml/</link>
+    <description>Recent content in plantuml on My Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 04 Mar 2022 23:50:40 +0800</lastBuildDate><atom:link href="https://blog.uzzzzz.xyz/tags/plantuml/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>plantuml</title>
+      <link>https://blog.uzzzzz.xyz/post/22/03/uml/</link>
+      <pubDate>Fri, 04 Mar 2022 23:50:40 +0800</pubDate>
+      
+      <guid>https://blog.uzzzzz.xyz/post/22/03/uml/</guid>
+      <description>@startuml Alice -&amp;gt; Bob: Authentication Request Bob --&amp;gt; Alice: Authentication Response Alice -&amp;gt; Bob: Another authentication Request Alice &amp;lt;-- Bob: Another authentication Response @enduml {{ }}</description>
+    </item>
+    
+  </channel>
+</rss>

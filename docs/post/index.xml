@@ -6,7 +6,16 @@
     <description>Recent content in Posts on My Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sun, 19 Sep 2021 11:48:40 +0800</lastBuildDate><atom:link href="https://blog.uzzzzz.xyz/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 04 Mar 2022 23:50:40 +0800</lastBuildDate><atom:link href="https://blog.uzzzzz.xyz/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>plantuml</title>
+      <link>https://blog.uzzzzz.xyz/post/22/03/uml/</link>
+      <pubDate>Fri, 04 Mar 2022 23:50:40 +0800</pubDate>
+      
+      <guid>https://blog.uzzzzz.xyz/post/22/03/uml/</guid>
+      <description>@startuml Alice -&amp;gt; Bob: Authentication Request Bob --&amp;gt; Alice: Authentication Response Alice -&amp;gt; Bob: Another authentication Request Alice &amp;lt;-- Bob: Another authentication Response @enduml {{ }}</description>
+    </item>
+    
     <item>
       <title>lua parser 负数小bug</title>
       <link>https://blog.uzzzzz.xyz/post/21/09/lua-parser-negative/</link>
